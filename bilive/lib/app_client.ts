@@ -31,7 +31,7 @@ class AppClient {
   // bilibili 客户端
   private static readonly __secretKey: string = '560c52ccd288fed045859ed18bffd973'
   public static readonly appKey: string = '1d8b6e7d45233436'
-  public static readonly build: string = '5291000'
+  public static readonly build: string = '5291001'
   public static readonly mobiApp: string = 'android'
   // bilibili 国际版
   // private static readonly __secretKey: string = '36efcfed79309338ced0380abd824ac1'
@@ -261,7 +261,7 @@ class AppClient {
 &password=${passWord}&platform=${AppClient.platform}&ts=${AppClient.TS}&username=${encodeURIComponent(this.userName)}`
     const auth: request.Options = {
       method: 'POST',
-      uri: 'https://passport.bilibili.com/api/v3/oauth2/login',
+      uri: 'https://passport.bilibili.com/api/v2/oauth2/login',
       body: AppClient.signQuery(authQuery, false),
       jar: this.__jar,
       json: true,
@@ -298,14 +298,14 @@ class AppClient {
     this.headers['Device-ID'] = AppClient.DeviceID
     // 设置 Buvid
     const buvid = await tools.XHR<string>({
-      uri: 'http://data.bilibili.com/gv/',
+      uri: 'https://data.bilibili.com/gv/',
       headers: this.headers
     }, 'Android')
     if (buvid !== undefined && buvid.response.statusCode === 200 && buvid.body.endsWith('infoc'))
       this.headers['Buvid'] = buvid.body
     // 设置 Display-ID
     const displayid = await tools.XHR<{ code: number, data: { id: string } }>({
-      uri: 'http://app.bilibili.com/x/v2/display/id?' + AppClient.signQueryBase(),
+      uri: 'https://app.bilibili.com/x/v2/display/id?' + AppClient.signQueryBase(),
       json: true,
       headers: this.headers
     }, 'Android')

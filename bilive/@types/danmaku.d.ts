@@ -290,6 +290,10 @@ interface SYS_MSG extends danmuJson {
   msg: string
   /** 同msg */
   msg_text: string
+  /** 广播: 消息内容 */
+  msg_common: string
+  /** 广播: 消息内容 */
+  msg_self: string
   rep: 1
   /** 2为小电视通知 */
   styleType: 2
@@ -298,8 +302,8 @@ interface SYS_MSG extends danmuJson {
   /** 原始房间号 */
   real_roomid: number
   rnd: number
-  /** 小电视编号 */
-  tv_id?: string | 0
+  /** 广播类型 */
+  broadcast_type: number
 }
 /**
  * 系统礼物消息, 广播
@@ -533,6 +537,46 @@ interface TV_END_data extends RAFFLE_END_data {
   giftName: string
   /** 中奖消息 */
   mobileTips: string
+}
+interface RAFFLE_END_data_win {
+   /** 获赠人 */
+   uname: string
+   /** 获赠人头像地址 */
+   face: string
+   /** 礼物名 '银瓜子' | '经验原石' */
+   giftName: string
+   /** 礼物类型 'silver' | 'stuff-1' */
+   giftId: string
+   /** 礼物数量 100000 | 10*/
+   giftNum: number
+  /** 中奖消息 */
+  msg: string
+}
+/**
+ * 中奖通知
+ * {"cmd":"NOTICE_MSG","full":{"head_icon":"","is_anim":1,"tail_icon":"","background":"#33ffffff","color":"#33ffffff","highlight":"#33ffffff","border":"#33ffffff","time":10},"half":{"head_icon":"","is_anim":0,"tail_icon":"","background":"#33ffffff","color":"#33ffffff","highlight":"#33ffffff","border":"#33ffffff","time":8},"roomid":"360972","real_roomid":"493","msg_common":"恭喜<%千里一醉醉醉醉醉醉%>获得大奖<%100x普通扭蛋币%>, 感谢<%丨四四丨%>的赠送","msg_self":"恭喜<%千里一醉醉醉醉醉醉%>获得大奖<%100x普通扭蛋币%>, 感谢<%丨四四丨%>的赠送","link_url":"http://live.bilibili.com/493","msg_type":4,"_roomid":360972}
+ *
+ * @interface NOTICE_MSG
+ * @extends {danmuJson}
+ */
+interface NOTICE_MSG extends danmuJson {
+  full: NOTICE_MSG_style
+  half: NOTICE_MSG_style
+  real_roomid: string
+  msg_common: string
+  msg_self: string
+  link_url: string
+  msg_type: number
+}
+interface NOTICE_MSG_style {
+  head_icon: string
+  is_anim: number;
+  tail_icon: string
+  background: string
+  color: string
+  highlight: string
+  border: string
+  time: number
 }
 /**
  * 活动相关
@@ -834,6 +878,15 @@ interface ACTIVITY_EVENT_data {
 interface WIN_ACTIVITY extends danmuJson {
   /** 第n轮抽奖 */
   number: number
+}
+/**
+ * 直播警告
+ * {"cmd":"WARNING","msg":"违反直播着装规范，请立即调整","roomid":883802,"_roomid":883802}
+ *
+ * @interface WARNING
+ */
+interface WARNING {
+  msg: string
 }
 /**
  * 直播强制切断

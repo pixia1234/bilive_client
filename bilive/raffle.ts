@@ -83,8 +83,8 @@ class Raffle {
         await tools.Sleep(this._options.time * 1000 + 15 * 1000)
         this._RaffleReward()
       }
-      else if (raffleJoin.body.code === 400 && raffleJoin.body.msg === '访问被拒绝') {
-        tools.Log(`${this._options.user.nickname} v3抽奖失败，已被封禁`)
+      else tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, raffleJoin.body)
+      if (raffleJoin.body.code === 400 && raffleJoin.body.msg === '访问被拒绝') {
         if (this._options.user.userData.ban === '未封禁') {
           tools.sendSCMSG(`${new Date().toString().slice(4, 24)} : ${this._options.user.nickname} 已被封禁`)
           this._options.user.userData.ban = '已封禁'
@@ -129,8 +129,8 @@ class Raffle {
         if (gift.gift_name.includes('小电视')) tools.sendSCMSG(msg)
       }
     }
-    else if (raffleAward.body.code === 400 && raffleAward.body.msg === '访问被拒绝') {
-      tools.Log(`${this._options.user.nickname} v4抽奖失败，已被封禁`)
+    else tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, raffleAward.body)
+    if (raffleAward.body.code === 400 && raffleAward.body.msg === '访问被拒绝') {
       if (this._options.user.userData.ban === '未封禁') {
         tools.sendSCMSG(`${this._options.user.nickname} 已被封禁`)
         this._options.user.userData.ban = '已封禁'
@@ -183,8 +183,11 @@ class Raffle {
       json: true,
       headers: this._options.user.headers
     }, 'Android')
-    if (lotteryReward !== undefined && lotteryReward.response.statusCode === 200 && lotteryReward.body.code === 0)
-      tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, lotteryReward.body.data.message)
+    if (lotteryReward !== undefined && lotteryReward.response.statusCode === 200) {
+      if (lotteryReward.body.code === 0)
+        tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, lotteryReward.body.data.message)
+      else tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, lotteryReward.body)
+    }
   }
 }
 export default Raffle

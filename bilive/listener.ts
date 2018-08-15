@@ -29,7 +29,7 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   private _RaffleRoomID: number = 0
-  private _SmallTVHistory: Map<number, number> = new Map()
+  private _smallTVID: Map<number, number> = new Map()
   private _raffleID: number = 0
   private _lotteryID: number = 0
   /**
@@ -55,7 +55,7 @@ class Listener extends EventEmitter {
       this._DMclient.delete(roomOrder)
     }
     this._RaffleRoomID = 0
-    this._SmallTVHistory = new Map()
+    this._smallTVID.clear()
   }
   /**
    * 获取各分区开播房间
@@ -126,7 +126,7 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   private async _SYSMSGHandler(dataJson: SYS_MSG) {
-    if (dataJson.real_roomid === undefined || dataJson.tv_id === undefined) return
+    if (dataJson.real_roomid === undefined) return
     const url = apiLiveOrigin + smallTVPathname
     const roomID = dataJson.real_roomid
     if (this._RaffleRoomID === roomID) return
@@ -142,7 +142,7 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   private async _SYSGiftHandler(dataJson: SYS_GIFT) {
-    if (dataJson.real_roomid === undefined || dataJson.giftId === undefined) return
+    if (dataJson.real_roomid === undefined) return
     const url = apiLiveOrigin + rafflePathname
     const roomID = dataJson.real_roomid
     if (this._RaffleRoomID === roomID) return
@@ -241,8 +241,8 @@ class Listener extends EventEmitter {
     const id = raffleMSG.id
     switch (raffleMSG.cmd) {
       case 'smallTV':
-        if (this._SmallTVHistory.get(id) !== undefined) return
-        this._SmallTVHistory.set(id,roomID)
+        if (this._smallTVID.get(id) !== undefined) return
+        this._smallTVID.set(id,roomID)
         break
       case 'raffle':
         if (this._raffleID >= id) return
