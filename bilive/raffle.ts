@@ -86,12 +86,12 @@ class Raffle {
       else tools.Log(this._options.user.nickname, this._options.title, this._options.raffleId, raffleJoin.body)
       if (raffleJoin.body.code === 400 && raffleJoin.body.msg === '访问被拒绝') {
         if (this._options.user.userData.ban === '未封禁') {
-          tools.sendSCMSG(`${new Date().toString().slice(4, 24)} : ${this._options.user.nickname} 已被封禁`)
+          tools.sendSCMSG(`${this._options.user.nickname} 已被封禁`)
           this._options.user.userData.ban = '已封禁'
-          this._options.user.userData.raffle = false
-          await tools.Sleep(60 * 60 * 1000)
-          this._options.user.userData.raffle = true
         }
+        this._options.user.userData.raffle = false
+        await tools.Sleep(2 * 60 * 60 * 1000)
+        this._options.user.userData.raffle = true
       }
     }
     else this._RaffleAward()
@@ -134,10 +134,10 @@ class Raffle {
       if (this._options.user.userData.ban === '未封禁') {
         tools.sendSCMSG(`${this._options.user.nickname} 已被封禁`)
         this._options.user.userData.ban = '已封禁'
-        this._options.user.userData.raffle = false
-        await tools.Sleep(60 * 60 * 1000)
-        this._options.user.userData.raffle = true
       }
+      this._options.user.userData.raffle = false
+      await tools.Sleep(2 * 60 * 60 * 1000)
+      this._options.user.userData.raffle = true
     }
   }
   /**
