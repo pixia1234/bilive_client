@@ -307,6 +307,16 @@ interface entrydata {
   uid: number
 }
 /**
+ * 模拟进入房间，规避封禁
+ *
+ * @interface entry_action
+ */
+interface entry_action {
+  code: number
+  msg: string
+  message: string
+}
+/**
  * 参与抽奖信息
  *
  * @interface raffleJoin
@@ -624,6 +634,74 @@ interface RoomRankDataList {
   rank: number
   score: number
   face: string
+}
+/**
+ * 上船信息
+ *
+ * @interface guardInfo
+ */
+interface guardInfos {
+  data: guardInfo[]
+}
+interface guardInfo {
+  GovernorName: string
+  Guard: string
+  GuardId: number
+  MasterName: string
+  OriginRoomId: number
+  ShortRoomId: number
+  Status: string
+  Time: string
+}
+/**
+ * 上船房间检查
+ *
+ * @interface guardRoom
+ */
+interface guardRoom {
+  code: number
+  msg: string
+  message: string
+  data: guardRoomData[]
+}
+interface guardRoomData {
+  id: number
+  keyword: string
+  mobile_animation_asset: string
+  mobile_display_mode: number
+  mobile_static_asset: string
+  privilege_type: number
+  sender: guardRoomDataSender
+  status: number
+  time: number
+}
+interface guardRoomDataSender {
+  face: string
+  uid: number
+  uname: string
+}
+interface guardJoin {
+  code: number
+  msg: string
+  message: string
+  data: guardJoinData
+}
+interface guardJoinData {
+  award_id: string
+  award_list: guardJoinDataAwardList[]
+  award_type: number
+  from: string
+  id: number
+  message: string
+  privilege_type: number
+  time: number
+  type: string
+}
+interface guardJoinDataAwardList {
+  content: string
+  img: string
+  name: string
+  type: number
 }
 /**
  * 应援团

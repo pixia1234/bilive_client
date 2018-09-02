@@ -53,6 +53,7 @@ class BiLive {
     const cstMin = cst.getUTCMinutes()
     if (cstString === '00:10') _user.forEach(user => user.nextDay())// 每天00:10刷新任务
     if (cstString === '13:58') _user.forEach(user => user.sendGift())// 每天13:58再次自动送礼, 因为一般活动14:00结束
+    if (cstString === ('02:28' || '15:00')) _user.forEach(user => user.getGuard())// 每天02:28和15:00检查上船
     if (cstMin === 30 && cstHour % 6 === 0) _user.forEach(user => user.daily())// 每天00:30, 06:30, 12:30, 18:30做日常
     if (((cstHour - 1) % 12 === 0) && cstMin === 0) _user.forEach(user => user.autoSend())// 每天01:00, 13:00做自动送礼V2
     if (cstMin === 0) _user.forEach(user => user.getUserInfo())//整点获取用户信息
@@ -65,6 +66,8 @@ class BiLive {
       else this._raffle = true
     }
     else this._raffle = true
+    // 清空ID缓存
+    this._SYSListener.clearAllID()
   }
   /**
    * 监听

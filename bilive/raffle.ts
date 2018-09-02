@@ -38,11 +38,14 @@ class Raffle {
    */
   public async Start() {
     await tools.XHR({
-      uri: `${apiLiveOrigin}/AppRoom/index?room_id=${this._options.roomID}&platform=android`,
+      method: 'POST',
+      uri: `${apiLiveOrigin}/room/v1/Room/room_entry_action`,
+      body:  `room_id=${this._options.roomID}&platform=pc&csrf_token=${tools.getCookie(this._options.user.jar, 'bili_jct')}`,
       jar: this._options.user.jar,
       json: true,
-      headers: this._options.user.headers
-    }, 'Android')
+      headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(this._options.roomID)}` }
+    })
+    await tools.Sleep(5 * 1000)
     switch (this._options.cmd) {
       case 'smallTV':
         this._url = apiLiveOrigin + smallTVPathname

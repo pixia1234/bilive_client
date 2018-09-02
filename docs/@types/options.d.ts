@@ -28,10 +28,12 @@ interface userDataMSG extends message {
 }
 // 应用设置
 interface config {
-  [index: string]: number | number[]
+  [index: string]: number | string | number[]
   defaultUserID: number
   listenNumber: number
   eventRooms: number[]
+  rafflePause: number[]
+  droprate: number
   adminServerChan: string
 }
 interface userData {
@@ -41,16 +43,19 @@ interface userData {
   passWord: string
   biliUID: number
   accessToken: string
+  refreshToken: string
   cookie: string
   status: boolean
   getUserInfo: boolean
+  getGiftBag: boolean
   doSign: boolean
   treasureBox: boolean
-  eventRoom: boolean
+  silver2coin: boolean
   raffle: boolean
   appraffle: boolean
-  silver2coin: boolean
-  coin2silver: boolean
+  raffleLimit: boolean
+  ban: string
+  eventRoom: boolean
   sendGift: boolean
   sendGiftRoom: number
   autoSend: boolean
@@ -59,25 +64,28 @@ interface userData {
 interface optionsInfo {
   [index: string]: configInfoData
   defaultUserID: configInfoData
-  listenNumber: configInfoData
-  apiOrigin: configInfoData
-  apiKey: configInfoData
   eventRooms: configInfoData
+  rafflePause: configInfoData
+  droprate: configInfoData
+  adminServerChan: configInfoData
   nickname: configInfoData
   userName: configInfoData
   passWord: configInfoData
   biliUID: configInfoData
   accessToken: configInfoData
+  refreshToken: configInfoData
   cookie: configInfoData
   status: configInfoData
   getUserInfo: configInfoData
+  getGiftBag: configInfoData
   doSign: configInfoData
   treasureBox: configInfoData
+  silver2coin: configInfoData
   raffle: configInfoData
   appraffle: configInfoData
+  raffleLimit: configInfoData
+  ban: configInfoData
   eventRoom: configInfoData
-  silver2coin: configInfoData
-  coin2silver: configInfoData
   sendGift: configInfoData
   sendGiftRoom: configInfoData
   autoSend: configInfoData

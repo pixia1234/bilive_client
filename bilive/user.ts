@@ -463,5 +463,56 @@ class User extends Online {
     }
     else tools.Log(this.nickname, `获取礼物包裹信息失败`)
   }
+  /**
+   * 获取并领取不同房间的上船信息
+   *
+   * @memberof User
+   */
+   public async getGuard() {
+     const guardInfosRAW = await tools.XHR({
+       uri: `http://118.25.108.153:8080/guard`,
+       json: true
+     })
+     if (guardInfosRAW === undefined) return
+     let guardInfos = <guardInfos>({
+       data: []
+     })
+     guardInfos.data = <guardInfo[]>guardInfosRAW.body
+     for (let i=0;i<guardInfos.data.length;i++) {
+       let guardInfo = guardInfos.data[i]
+       if (guardInfo.Guard === 'Governor') continue
+       await tools.XHR({//_WebEntry 虽然好像没什么用还是写进来
+         method: 'POST',
+         uri: `${apiLiveOrigin}/room/v1/Room/room_entry_action`,
+         jar: this.jar,
+         json: true,
+         headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(guardInfo.OriginRoomId)}` }
+       })
+       const guardRoom = await tools.XHR<guardRoom>({
+         uri: `${apiLiveOrigin}/lottery/v1/Lottery/check_guard?roomid=${guardInfo.OriginRoomId}`,
+         json: true,
+         headers: this.headers
+       })
+       await tools.Sleep(10 * 1000)
+       if (guardRoom === undefined) continue
+       if (guardRoom.body.code === 0 && guardRoom.body.data.length > 0) {
+         guardRoom.body.data.forEach(async (data) => {
+           const guardJoin = await tools.XHR<guardJoin>({
+             method: 'POST',
+             uri: `${apiLiveOrigin}/lottery/v2/Lottery/join`,
+             body: `roomid=${guardInfo.OriginRoomId}&id=${data.id}&type=guard&csrf_token=${tools.getCookie(this.jar, 'bili_jct')}`,
+             jar: this.jar,
+             json: true,
+             headers: this.headers
+           })
+           if (guardJoin === undefined) return
+           if (guardJoin.body.code === 0) tools.Log(this.nickname, `抽奖 ${guardInfo.OriginRoomId}`, guardJoin.body.data.message)
+           await tools.Sleep(10 * 1000)
+         })
+       }
+       await tools.Sleep(30 * 1000)
+     }
+     tools.Log(this.nickname, `已完成提督、舰长亲密度检查`)
+   }
 }
 export default User
