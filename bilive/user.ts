@@ -319,6 +319,11 @@ class User extends Online {
                   gift_value = 19900
                   bag_value = gift_value * giftData.gift_num//蓝白胖次
                 break
+                case 30054:
+                  gift_value = 5000
+                  bag_value = gift_value * giftData.gift_num//粉丝卡，什么玩意儿
+                break
+                default: break
               }
               if (intimacy_needed >= bag_value) send_num = giftData.gift_num
               else send_num = Math.floor(intimacy_needed / gift_value)
@@ -480,7 +485,10 @@ class User extends Online {
      guardInfos.data = <guardInfo[]>guardInfosRAW.body
      for (let i=0;i<guardInfos.data.length;i++) {
        let guardInfo = guardInfos.data[i]
+       let guardType = '';
        if (guardInfo.Guard === 'Governor') continue
+       if (guardInfo.Guard === 'Praefect') guardType = '提督'
+       if (guardInfo.Guard === 'Captain') guardType = '舰长'
        await tools.XHR({//_WebEntry 虽然好像没什么用还是写进来
          method: 'POST',
          uri: `${apiLiveOrigin}/room/v1/Room/room_entry_action`,
@@ -506,7 +514,7 @@ class User extends Online {
              headers: this.headers
            })
            if (guardJoin === undefined) return
-           if (guardJoin.body.code === 0) tools.Log(this.nickname, `抽奖 ${guardInfo.OriginRoomId}`, guardJoin.body.data.message)
+           if (guardJoin.body.code === 0) tools.Log(this.nickname, `${guardInfo.OriginRoomId} ${guardType}奖励`, guardJoin.body.data.message)
            await tools.Sleep(10 * 1000)
          })
        }

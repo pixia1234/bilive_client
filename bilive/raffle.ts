@@ -80,7 +80,7 @@ class Raffle {
       if (raffleJoin === undefined || raffleJoin.response.statusCode !== 200) return
       if (raffleJoin.body.code === 0) {
         if (this._options.user.userData.ban === '已封禁') {
-          tools.sendSCMSG(`${new Date().toString().slice(4, 24)} : ${this._options.user.nickname} 已解除封禁`)
+          tools.sendSCMSG(`${this._options.user.nickname} 已解除封禁`)
           this._options.user.userData.ban = '未封禁'
         }
         await tools.Sleep(this._options.time * 1000 + 15 * 1000)
