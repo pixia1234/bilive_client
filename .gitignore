@@ -44,4 +44,4 @@ build
 .vscode
 options
 package-lock.json
-/*.js
+*.js

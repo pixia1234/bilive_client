@@ -441,6 +441,28 @@ interface GUARD_MSG extends danmuJson {
   buy_type?: number
 }
 /**
+ * 上船公告
+ * {"cmd": "GUARD_LOTTERY_START","data":{"id":545742,"roomid":5311231,"message":"陌依想带青梦梦去蹦迪 在【5311231】购买了舰长，请前往抽奖","type":"guard","privilege_type":3,"link":"https://live.bilibili.com/5311231","payflow_id":"android_503e7006b74fe5a576_201810","lottery":{"id":545742,"sender":{"uid":57103756,"uname":"陌依想带青梦梦去蹦迪","face":"http://i0.hdslb.com/bfs/face/4fd60c4514a46c5cffca64dfe8dcfedf18b1a68f.jpg"},"keyword":"guard","privilege_type":3,"time":1200,"status":1,"mobile_display_mode":2,"mobile_static_asset":"","mobile_animation_asset":""}},"_roomid":5311231}
+ *
+ *
+ * @interface GUARD_LOTTERY_START
+ * @extends {danmuJson}
+ */
+interface GUARD_LOTTERY_START extends LOTTERY_START {
+  data: GUARD_LOTTERY_START_data
+}
+interface GUARD_LOTTERY_START_data extends LOTTERY_START_data {
+  type: "guard"
+  /** 抽奖类型 */
+  privilege_type: 1 | 2 | 3
+  /** 上船订单 */
+  payflow_id: string
+  lottery: GUARD_LOTTERY_START_data_lottery
+}
+interface GUARD_LOTTERY_START_data_lottery extends LOTTERY_START_data_lottery {
+  privilege_type: number
+}
+/**
  * 抽奖开始
  * {"cmd":"RAFFLE_START","roomid":11365,"data":{"raffleId":5082,"type":"newspring","from":"LexBurner","time":60},"_roomid":11365}
  * {"cmd":"RAFFLE_START","data":{"id":"54588","dtime":180,"msg":{"cmd":"SYS_MSG","msg":"一圆滚滚:?送给:?-牛奶喵:?一个摩天大楼，点击前往TA的房间去抽奖吧","msg_text":"一圆滚滚:?送给:?-牛奶喵:?一个摩天大楼，点击前往TA的房间去抽奖吧","rep":1,"styleType":2,"url":"http://live.bilibili.com/344839","roomid":344839,"real_roomid":344839,"rnd":1003073948,"tv_id":0},"raffleId":54588,"title":"摩天大楼抽奖","type":"GIFT_20003","from":"一圆滚滚","from_user":{"uname":"一圆滚滚","face":"http://static.hdslb.com/images/member/noface.gif"},"time":180,"max_time":180,"time_wait":120,"asset_animation_pic":"http://i0.hdslb.com/bfs/live/7e47e9cfb744acd0319a4480e681258ce3a611fe.gif","asset_tips_pic":"http://s1.hdslb.com/bfs/live/380bcd708da496d75737c68930965dd67b82879d.png"},"_roomid":344839}
@@ -570,7 +592,7 @@ interface NOTICE_MSG extends danmuJson {
 }
 interface NOTICE_MSG_style {
   head_icon: string
-  is_anim: number;
+  is_anim: number
   tail_icon: string
   background: string
   color: string
@@ -944,6 +966,68 @@ interface PK_MIC_Base extends danmuJson {
   pk_status: number
 }
 /**
+ * PK邀请
+ * {"cmd":"PK_INVITE_INIT","pk_invite_status":200,"invite_id":514,"face":"http://i2.hdslb.com/bfs/face/b50c99b0c989eb303e308b0574d509acab7b8012.jpg","uname":"不会编程的飞飞","area_name":"视频聊天","user_level":22,"master_level":16,"roomid":11420618,"_roomid":11420618}
+ *
+ * @interface PK_INVITE_INIT
+ * @extends {danmuJson}
+ */
+interface PK_INVITE_INIT extends danmuJson {
+ pk_invite_status: number
+ invite_id: number
+ face: string
+ uname: string
+ area_name: string
+ user_level: number
+ master_level: number
+}
+/**
+ * 拒绝PK邀请
+ * {"cmd":"PK_INVITE_REFUSE","pk_invite_status":1100,"invite_id":698,"roomid":"11741803","_roomid":11741803}
+ *
+ * @interface PK_INVITE_REFUSE
+ * @extends {danmuJson}
+ */
+interface PK_INVITE_REFUSE extends danmuJson {
+ pk_invite_status: number
+ invite_id: number
+}
+/**
+ * 取消PK邀请
+ * {"cmd":"PK_INVITE_CANCEL","pk_invite_status":1200,"invite_id":1023,"face":"http://i2.hdslb.com/bfs/face/e68d36b37038428fd1e32f894f8c2eee6388412d.jpg","uname":"纯情的黄老师","area_name":"视频聊天","user_level":10,"master_level":19,"roomid":"5375","_roomid":5375}
+ *
+ * @interface PK_INVITE_CANCEL
+ * @extends {danmuJson}
+ */
+interface PK_INVITE_CANCEL extends danmuJson {
+  pk_invite_status: number
+  invite_id: number
+  face: string
+  uname: string
+  area_name: string
+  user_level: number
+  master_level: number
+}
+/**
+ * PK邀请相关(不明)
+ * {"cmd":"PK_INVITE_SWITCH_CLOSE","roomid":60050,"_roomid":60050}
+ *
+ * @interface RootObject
+ * @extends {danmuJson}
+ */
+interface RootObject extends danmuJson { }
+/**
+ * PK邀请失败
+ * {"cmd":"PK_INVITE_FAIL","pk_invite_status":1100,"invite_id":7529,"roomid":"10817769","_roomid":10817769}
+ *
+ * @interface PK_INVITE_FAIL
+ * @extends {danmuJson}
+ */
+interface PK_INVITE_FAIL extends danmuJson {
+  pk_invite_status: number
+  invite_id: number
+}
+/**
  * PK匹配
  * {"cmd":"PK_MATCH","pk_status":100,"pk_id":3291,"data":{"init_id":273022,"match_id":52320,"escape_time":5,"is_portrait":false,"uname":"栗子蛋糕酱","face":"http://i0.hdslb.com/bfs/face/6fb781f75b9c30d2d8b384793fcd02ad3238b1bd.jpg","uid":922127},"roomid":273022,"_roomid":273022}
  *
@@ -1159,7 +1243,7 @@ interface PK_CLICK_AGAIN extends PK_MIC_Base { }
  * @extends {PK_MIC_Base}
  */
 interface PK_AGAIN extends PK_MIC_Base {
-  data: PK_AGAIN_Data;
+  data: PK_AGAIN_Data
 }
 interface PK_AGAIN_Data extends PK_MATCH_Data {
   /** 新PK编号 */
@@ -1183,6 +1267,33 @@ interface PK_MIC_END_Data {
   type: number
   /** 异常?编号 */
   exception_id?: number
+}
+/**
+ * 用户头衔(存疑)
+ * {"cmd":"USER_TITLE_GET","data":{"title_id":"may-pillow","source":"2016 五月病","name":"被窝","description":"赠送 25 个被窝","colorful":0,"create_time":"2018-10-31 20:17:15","expire_time":"永久","url":"/may","mobile_pic_url":"http://s1.hdslb.com/bfs/static/blive/live-assets/mobile/titles/title/3/may-pillow.png?20180726173300","web_pic_url":"http://s1.hdslb.com/bfs/static/blive/live-assets/mobile/titles/title/3/may-pillow.png?20180726173300","num":1,"score":0,"level":1},"uid":301606770,"_roomid":9950825}
+ * {"cmd":"USER_TITLE_GET","data":{"title_id":"title-174-1","source":"2018 BLS年终盛典 ","name":"幻影","description":"通过普通扭蛋机有几率获得 ","colorful":0,"create_time":"2018-10-31 20:19:26","expire_time":"永久","url":"http://live.bilibili.com/blackboard/bls-2018-web.html","mobile_pic_url":"http://s1.hdslb.com/bfs/vc/a61f2913f8a86b03ef432a286fd5e9e3e22e17bd.png?20180726173300","web_pic_url":"http://s1.hdslb.com/bfs/vc/a61f2913f8a86b03ef432a286fd5e9e3e22e17bd.png?20180726173300","num":1,"score":0,"level":1},"uid":66822870,"_roomid":2776645}
+ *
+ * @interface USER_TITLE_GET
+ * @extends {danmuJson}
+ */
+interface USER_TITLE_GET extends danmuJson {
+  data: USER_TITLE_GET_Data
+  uid: number
+}
+interface USER_TITLE_GET_Data {
+  title_id: string
+  source: string
+  name: string
+  description: string
+  colorful: number
+  create_time: string
+  expire_time: string
+  url: string
+  mobile_pic_url: string
+  web_pic_url: string
+  num: number
+  score: number
+  level: number
 }
 /**
  * 画板活动

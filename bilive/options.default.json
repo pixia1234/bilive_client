@@ -7,6 +7,8 @@
   },
   "config": {
     "defaultUserID": 0,
+    "listenMethod": 0,
+    "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
     "listenNumber": 3,
     "eventRooms": [
       3
@@ -15,6 +17,7 @@
       3,
       9
     ],
+    "raffleDelay": 3000,
     "droprate": 0,
     "adminServerChan": ""
   },
@@ -29,25 +32,39 @@
     "cookie": "",
     "status": false,
     "getUserInfo": true,
-    "getGiftBag": false,
     "doSign": false,
     "treasureBox": false,
     "raffle": false,
-    "appraffle": false,
+    "appRaffle": false,
     "raffleLimit": true,
-    "ban": "未封禁",
+    "beatStorm": false,
+    "ban": false,
+    "banTime": 0,
     "eventRoom": false,
     "silver2coin": false,
     "sendGift": false,
     "sendGiftRoom": 0,
     "autoSend": false,
-    "signGroup": false
+    "signGroup": false,
+    "main": false,
+    "mainCoin": false,
+    "mainCoinGroup": []
   },
   "info": {
     "defaultUserID": {
       "description": "默认监听UID",
       "tip": "用来监听系统消息的用户ID, 默认为0",
       "type": "number"
+    },
+    "listenMethod": {
+      "description": "监听方法",
+      "tip": "监听抽奖信息的方法，0为本地；1为远程（需设置监听服务器）；2为均采用（需监听服务器）",
+      "type": "string"
+    },
+    "serverURL": {
+      "description": "监听服务器",
+      "tip": "用来监听房间抽奖消息, 格式为server#protocol",
+      "type": "string"
     },
     "listenNumber": {
       "description": "各分区监听房间数",
@@ -109,11 +126,6 @@
       "tip": "整点查询用户信息，默认开启",
       "type": "boolean"
     },
-    "getGiftBag": {
-      "description": "礼物包裹信息",
-      "tip": "每4h查询用户包裹，默认关闭，需要可开启",
-      "type": "boolean"
-    },
     "doSign": {
       "description": "签到",
       "tip": "每日签到",
@@ -129,9 +141,9 @@
       "tip": "参与抽奖",
       "type": "boolean"
     },
-    "appraffle": {
+    "appRaffle": {
       "description": "App抽奖",
-      "tip": "使用App抽奖，勾选则使用v3 api",
+      "tip": "使用App抽奖，勾选则使用v4 api",
       "type": "boolean"
     },
     "raffleLimit": {
@@ -139,10 +151,10 @@
       "tip": "抽奖限制，默认开启，头铁的可以关掉XD",
       "type": "boolean"
     },
-    "ban": {
-      "description": "封禁状态",
-      "tip": "目前的封禁状态，别动XD",
-      "type": "string"
+    "beatStorm": {
+      "description": "节奏风暴",
+      "tip": "开启节奏风暴，只在设置了远程服务器时有效",
+      "type": "boolean"
     },
     "eventRoom": {
       "description": "每日任务",
@@ -151,7 +163,7 @@
     },
     "silver2coin": {
       "description": "银瓜子兑换硬币",
-      "tip": "自动将银瓜子兑换成硬币, 每天两个",
+      "tip": "自动将银瓜子兑换成硬币, 每天一个",
       "type": "boolean"
     },
     "sendGift": {
@@ -173,6 +185,21 @@
       "description": "应援团签到",
       "tip": "自动签到所有已加入的应援团",
       "type": "boolean"
+    },
+    "main": {
+      "description": "主站任务",
+      "tip": "完成主站任务",
+      "type": "boolean"
+    },
+    "mainCoin": {
+      "description": "主站投币",
+      "tip": "完成主站投币",
+      "type": "boolean"
+    },
+    "mainCoinGroup": {
+      "description": "投币对象",
+      "tip": "指定特定的主站投币对象uid",
+      "type": "numberArray"
     }
   },
   "apiIPs": [

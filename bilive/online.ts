@@ -1,7 +1,7 @@
-import request from 'request'
+import { CookieJar as requestCookieJar } from 'request'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
-import { apiLiveOrigin, _options, liveOrigin } from './index'
+import Options, { apiLiveOrigin, liveOrigin } from './options'
 /**
  * Creates an instance of Online.
  *
@@ -33,7 +33,7 @@ class Online extends AppClient {
   public set refreshToken(refreshToken: string) { this.userData.refreshToken = refreshToken }
   public get cookieString(): string { return this.userData.cookie }
   public set cookieString(cookieString: string) { this.userData.cookie = cookieString }
-  public jar!: request.CookieJar
+  public jar!: requestCookieJar
   /**
    * 验证码 DataURL
    *
@@ -82,7 +82,7 @@ class Online extends AppClient {
   public Stop() {
     clearTimeout(this._heartTimer)
     this.userData.status = false
-    tools.Options(_options)
+    Options.save()
     tools.sendSCMSG(`${this.nickname} 已停止挂机`)
   }
   /**
@@ -92,7 +92,7 @@ class Online extends AppClient {
    * @returns {(Promise<'captcha' | 'stop' | void>)}
    * @memberof Online
    */
-  public async getOnlineInfo(roomID = _options.config.eventRooms[0]): Promise<'captcha' | 'stop' | void> {
+  public async getOnlineInfo(roomID = Options._.config.eventRooms[0]): Promise<'captcha' | 'stop' | void> {
     const isLogin = await tools.XHR<{ code: number }>({
       uri: `${liveOrigin}/user/getuserinfo`,
       jar: this.jar,
@@ -125,7 +125,7 @@ class Online extends AppClient {
    * @memberof Online
    */
   protected async _onlineHeart(): Promise<'cookieError' | 'tokenError' | void> {
-    const roomID = _options.config.eventRooms[0]
+    const roomID = Options._.config.eventRooms[0]
     const heartPC = await tools.XHR<userOnlineHeart>({
       method: 'POST',
       uri: `${apiLiveOrigin}/User/userOnlineHeart`,
@@ -157,7 +157,7 @@ class Online extends AppClient {
     if (refresh.status === AppClient.status.success) {
       this.jar = tools.setCookie(this.cookieString)
       await this.getOnlineInfo()
-      tools.Options(_options)
+      Options.save()
       this._heartLoop()
       tools.Log(this.nickname, 'Cookie已更新')
     }
@@ -178,7 +178,7 @@ class Online extends AppClient {
       this.captchaJPEG = ''
       this.jar = tools.setCookie(this.cookieString)
       await this.getOnlineInfo()
-      tools.Options(_options)
+      Options.save()
       this._heartLoop()
       tools.Log(this.nickname, 'Token已更新')
     }

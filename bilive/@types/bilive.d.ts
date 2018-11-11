@@ -1,10 +1,13 @@
-// index
+/*******************
+ ****** index ******
+ *******************/
 /**
  * 应用设置
  *
  * @interface options
  */
-interface _options {
+interface options {
+  [index: string]: any
   server: server
   config: config
   user: userCollection
@@ -14,6 +17,7 @@ interface _options {
   roomList: [number, number][]
 }
 interface server {
+  [index: string]: number | string
   path: string
   hostname: string
   port: number
@@ -22,17 +26,20 @@ interface server {
 interface config {
   [index: string]: number | string | number[]
   defaultUserID: number
+  listenMethod: number
+  serverURL: string
   listenNumber: number
   eventRooms: number[]
   rafflePause: number[]
   droprate: number
+  raffleDelay: number
   adminServerChan: string
 }
 interface userCollection {
   [index: string]: userData
 }
 interface userData {
-  [index: string]: string | boolean | number
+  [index: string]: string | boolean | number | number[]
   nickname: string
   userName: string
   passWord: string
@@ -42,26 +49,32 @@ interface userData {
   cookie: string
   status: boolean
   getUserInfo: boolean
-  getGiftBag: boolean
   doSign: boolean
   treasureBox: boolean
   silver2coin: boolean
   raffle: boolean
-  appraffle: boolean
+  appRaffle: boolean
   raffleLimit: boolean
-  ban: string
+  beatStorm: boolean
+  ban: boolean
+  banTime: number
   eventRoom: boolean
   sendGift: boolean
   sendGiftRoom: number
   autoSend: boolean
   signGroup: boolean
+  main: boolean
+  mainCoin: boolean
+  mainCoinGroup: number[]
 }
 interface optionsInfo {
   [index: string]: configInfoData
   defaultUserID: configInfoData
+  serverURL: configInfoData
   eventRooms: configInfoData
   rafflePause: configInfoData
   droprate: configInfoData
+  raffleDelay: configInfoData
   adminServerChan: configInfoData
   nickname: configInfoData
   userName: configInfoData
@@ -72,19 +85,21 @@ interface optionsInfo {
   cookie: configInfoData
   status: configInfoData
   getUserInfo: configInfoData
-  getGiftBag: configInfoData
   doSign: configInfoData
   treasureBox: configInfoData
   silver2coin: configInfoData
   raffle: configInfoData
-  appraffle: configInfoData
+  appRaffle: configInfoData
   raffleLimit: configInfoData
-  ban: configInfoData
+  beatStorm: configInfoData
   eventRoom: configInfoData
   sendGift: configInfoData
   sendGiftRoom: configInfoData
   autoSend: configInfoData
   signGroup: configInfoData
+  main: configInfoData
+  mainCoin: configInfoData
+  mainCoinGroup: configInfoData
 }
 interface configInfoData {
   description: string
@@ -92,21 +107,280 @@ interface configInfoData {
   type: string
   cognate?: string
 }
-// bilive_client
+interface AppClient {
+  readonly actionKey: string
+  readonly platform: string
+  readonly appKey: string
+  readonly build: string
+  readonly device: string
+  readonly mobiApp: string
+  readonly TS: number
+  readonly RND: number
+  readonly DeviceID: string
+  readonly baseQuery: string
+  signQuery(params: string, ts?: boolean): string
+  signQueryBase(params?: string): string
+  readonly status: typeof status
+  captcha: string
+  userName: string
+  passWord: string
+  biliUID: number
+  accessToken: string
+  refreshToken: string
+  cookieString: string
+  headers: Headers
+  init(): Promise<void>
+  getCaptcha(): Promise<captchaResponse>
+  login(): Promise<loginResponse>
+  logout(): Promise<logoutResponse>
+  refresh(): Promise<loginResponse>
+}
+interface Online extends AppClient {
+  userData: userData
+  readonly nickname: string
+  jar: import('request').CookieJar
+  captchaJPEG: string
+  readonly tokenQuery: string
+  Start(): Promise<'captcha' | 'stop' | void>
+  Stop(): void
+  getOnlineInfo(roomID?: number): Promise<'captcha' | 'stop' | void>
+}
+interface Daily extends Online {
+  uid: string
+  Start(): Promise<'captcha' | 'stop' | void>
+  Stop(): void
+  nextDay(): Promise<void>
+  daily(): Promise<void>
+  sign(): Promise<void>
+  treasureBox(): Promise<void>
+  eventRoom(): Promise<void>
+  silver2coin(): Promise<void>
+  sendGift(): Promise<void>
+  autoSend(): Promise<void>
+  signGroup(): Promise<void>
+  getUserInfo(): Promise<void>
+  bilibili(): Promise<void>
+}
+type User = Daily
+/*******************
+ **** dm_client ****
+ *******************/
+declare enum dmErrorStatus {
+  'client' = 0,
+  'danmaku' = 1,
+  'timeout' = 2
+}
+interface DMclientOptions {
+  roomID?: number
+  userID?: number
+  protocol?: DMclientProtocol
+}
+type DMclientProtocol = 'socket' | 'flash' | 'ws' | 'wss'
+type DMerror = DMclientError | DMdanmakuError
+interface DMclientError {
+  status: dmErrorStatus.client | dmErrorStatus.timeout
+  error: Error
+}
+interface DMdanmakuError {
+  status: dmErrorStatus.danmaku
+  error: TypeError
+  data: Buffer
+}
+/*******************
+ *** app_client ****
+ *******************/
+declare enum appStatus {
+  'success' = 0,
+  'captcha' = 1,
+  'error' = 2,
+  'httpError' = 3
+}
+/**
+ * 公钥返回
+ *
+ * @interface getKeyResponse
+ */
+interface getKeyResponse {
+  ts: number
+  code: number
+  data: getKeyResponseData
+}
+interface getKeyResponseData {
+  hash: string
+  key: string
+}
+/**
+ * 验证返回
+ *
+ * @interface authResponse
+ */
+interface authResponse {
+  ts: number
+  code: number
+  data: authResponseData
+}
+interface authResponseData {
+  status: number
+  token_info: authResponseTokeninfo
+  cookie_info: authResponseCookieinfo
+  sso: string[]
+}
+interface authResponseCookieinfo {
+  cookies: authResponseCookieinfoCooky[]
+  domains: string[]
+}
+interface authResponseCookieinfoCooky {
+  name: string
+  value: string
+  http_only: number
+  expires: number
+}
+interface authResponseTokeninfo {
+  mid: number
+  access_token: string
+  refresh_token: string
+  expires_in: number
+}
+/**
+ * 注销返回
+ *
+ * @interface revokeResponse
+ */
+interface revokeResponse {
+  message: string
+  ts: number
+  code: number
+}
+/**
+ * 登录返回信息
+ */
+type loginResponse = loginResponseSuccess | loginResponseCaptcha | loginResponseError | loginResponseHttp
+interface loginResponseSuccess {
+  status: appStatus.success
+  data: authResponse
+}
+interface loginResponseCaptcha {
+  status: appStatus.captcha
+  data: authResponse
+}
+interface loginResponseError {
+  status: appStatus.error
+  data: authResponse
+}
+interface loginResponseHttp {
+  status: appStatus.httpError
+  data: XHRresponse<getKeyResponse> | XHRresponse<authResponse> | undefined
+}
+/**
+ * 登出返回信息
+ */
+type logoutResponse = revokeResponseSuccess | revokeResponseError | revokeResponseHttp
+interface revokeResponseSuccess {
+  status: appStatus.success
+  data: revokeResponse
+}
+interface revokeResponseError {
+  status: appStatus.error
+  data: revokeResponse
+}
+interface revokeResponseHttp {
+  status: appStatus.httpError
+  data: XHRresponse<revokeResponse> | undefined
+}
+/**
+ * 验证码返回信息
+ */
+type captchaResponse = captchaResponseSuccess | captchaResponseError
+interface captchaResponseSuccess {
+  status: appStatus.success
+  data: Buffer
+}
+interface captchaResponseError {
+  status: appStatus.error
+  data: XHRresponse<Buffer> | undefined
+}
+/*******************
+ ****** tools ******
+ *******************/
+/**
+ * XHR返回
+ *
+ * @interface response
+ * @template T
+ */
+interface XHRresponse<T> {
+  response: {
+    statusCode: number
+  }
+  body: T
+}
+/**
+ * Server酱
+ *
+ * @interface serverChan
+ */
+interface serverChan {
+  errno: number
+  errmsg: string
+  dataset: string
+}
+/*******************
+ ** bilive_client **
+ *******************/
 /**
  * 消息格式
  *
- * @interface message
+ * @interface raffleMessage
  */
-interface message {
-  cmd: 'smallTV' | 'raffle' | 'lottery'
+interface raffleMessage {
+  cmd: 'smallTV' | 'raffle'
+  roomID: number
+  id: number
+  type: string
+  title: string
+  time: number
+  max_time: number
+  time_wait: number
+}
+/**
+ * 消息格式
+ *
+ * @interface lotteryMessage
+ */
+interface lotteryMessage {
+  cmd: 'lottery'
   roomID: number
   id: number
   type: string
   title: string
   time: number
 }
-// listener
+/**
+ * 消息格式
+ *
+ * @interface beatStormMessage
+ */
+interface beatStormMessage {
+  cmd: 'beatStorm'
+  roomID: number
+  id: number
+  type: string
+  title: string
+  time: number
+}
+/**
+ * 消息格式
+ *
+ * @interface systemMessage
+ */
+interface systemMessage {
+  cmd: 'sysmsg'
+  msg: string
+}
+type message = raffleMessage | lotteryMessage | beatStormMessage | systemMessage
+/*******************
+ **** listener *****
+ *******************/
 /**
  * 获取直播列表
  *
@@ -271,16 +545,9 @@ interface lotteryCheckDataSender {
   uname: string
   face: string
 }
-// raffle
-/**
- * 抽奖设置
- *
- * @interface raffleOptions
- */
-interface raffleOptions extends message {
-  raffleId: number
-  user: any
-}
+/*******************
+ ***** raffle ******
+ *******************/
 /**
  * 模拟进入房间，规避封禁
  *
@@ -383,7 +650,41 @@ interface lotteryRewardDataAwardlist {
   type: number
   content: string
 }
-// online
+/**
+ * 节奏跟风返回值
+ *
+ * @interface joinStorm
+ */
+interface joinStorm {
+  code: number
+  message: string
+  msg: string
+  data: joinStormData
+}
+interface joinStormData {
+  gift_id: number
+  title: string
+  content: string
+  mobile_content: string
+  gift_img: string
+  gift_num: number
+  gift_name: string
+}
+/*******************
+ ***** online ******
+ *******************/
+/**
+ * 在线心跳返回
+ *
+ * @interface userOnlineHeart
+ */
+interface userOnlineHeart {
+  code: number
+  msg: string
+}
+/*******************
+ ***** daily *******
+ *******************/
 /**
  * 签到信息
  *
@@ -528,29 +829,6 @@ interface bagInfoData {
   super_num: number
 }
 /**
- * 包裹信息WEB
- *
- * @interface bagInfoW
- */
-interface bagInfoW {
-  code: number
-  msg: string
-  message: string
-  data: bagInfoWData
-}
-interface bagInfoWData {
-  list: bagWlist[]
-  time: number
-}
-interface bagWlist {
-  bag_id: number
-  expire_at: number
-  gift_id: number
-  gift_name: string
-  gift_num: number
-  gift_type: number
-}
-/**
  * 赠送包裹礼物
  *
  * @interface sendBag
@@ -581,15 +859,15 @@ interface sendBagData {
 /**
  * 佩戴勋章信息
  *
- * @interface WearInfo
+ * @interface wearInfo
  */
-interface WearInfo {
+interface wearInfo {
   code: number
   msg: string
   message: string
-  data: WearData
+  data: wearData
 }
-interface WearData {
+interface wearData {
   id: number
   uid: number
   target_id: number
@@ -600,10 +878,10 @@ interface WearData {
   intimacy: number
   next_intimacy: number
   day_limit: number
-  roominfo: WearRoomInfo
+  roominfo: wearRoomInfo
   today_feed: string
 }
-interface WearRoomInfo {
+interface wearRoomInfo {
   room_id: number
   uid: number
 }
@@ -752,7 +1030,7 @@ interface silver2coin {
   code: number
   msg: string
   message: string
-  data: silver2coinData;
+  data: silver2coinData
 }
 interface silver2coinData {
   silver: string
@@ -814,26 +1092,16 @@ interface capsuleData {
   capsule: SEND_GIFT_data_capsule
 }
 /**
- * Server酱
- *
- * @interface serverChan
- */
-interface serverChan {
-  errno: number
-  errmsg: string
-  dataset: string
-}
-/**
  * 个人信息
  *
- * @interface UserInfo
+ * @interface userInfo
  */
-interface UserInfo {
+interface userInfo {
   code: string
   msg: string
-  data: UserInfoData
+  data: userInfoData
 }
-interface UserInfoData {
+interface userInfoData {
   uname: string
   silver: number
   gold: number
@@ -846,19 +1114,19 @@ interface UserInfoData {
 /**
  * 勋章信息
  *
- * @interface MedalInfo
+ * @interface medalInfo
  */
-interface MedalInfo {
+interface medalInfo {
   code: number
   msg: string
-  data: MedalInfoData
+  data: medalInfoData
 }
-interface MedalInfoData {
+interface medalInfoData {
   medalCount: number
   count: number
-  fansMedalList: MedalInfoDataInfo[]
+  fansMedalList: medalInfoDataInfo[]
 }
-interface MedalInfoDataInfo {
+interface medalInfoDataInfo {
   status: number
   level: number
   intimacy: number
@@ -867,4 +1135,112 @@ interface MedalInfoDataInfo {
   rank: number
   target_id: number
   uid: number
+}
+/**
+ * 主站关注
+ *
+ * @interface attentions
+ */
+interface attentions {
+  code: number
+  data: attentionsData
+  message: string
+  ttl: number
+}
+interface attentionsData {
+  list: attentionsDataList[]
+  reversion: number
+  total: number
+}
+interface attentionsDataList {
+  mid: number
+  mtime: number
+  uname: string
+}
+/**
+ * 主站视频
+ *
+ * @interface getSummitVideo
+ */
+interface getSummitVideo {
+  status: boolean
+  data: getSummitVideoData
+}
+interface getSummitVideoData {
+  count: number
+  pages: number
+  vlist: getSummitVideoDataList[]
+}
+interface getSummitVideoDataList {
+  aid: number
+  created: number
+  mid: number
+  title: string
+}
+/**
+ * 主站cid
+ *
+ * @interface getCid
+ */
+interface getCid {
+  data: cid[]
+}
+interface cid {
+  cid: number
+}
+/**
+ * 主站分享返回
+ *
+ * @interface shareAV
+ */
+interface shareAV {
+  code: number
+}
+/**
+ * 主站心跳
+ *
+ * @interface avHeart
+ */
+interface avHeart {
+  code: number
+}
+/**
+ * 主站心跳
+ *
+ * @interface avHeart
+ */
+interface avHeart {
+  code: number
+}
+/**
+ * 主站信息
+ *
+ * @interface mainUserInfo
+ */
+interface mainUserInfo {
+  code: number
+  data: mainUserInfoData
+}
+interface mainUserInfoData {
+  coins: number
+}
+/**
+ * 主站任务
+ *
+ * @interface mainReward
+ */
+interface mainReward {
+  code: number
+  data: mainRewardData
+}
+interface mainRewardData {
+  coins_av: number
+}
+/**
+ * 投币回调
+ *
+ * @interface coinAdd
+ */
+interface coinAdd {
+  code: number
 }

@@ -43,7 +43,6 @@ dDiv.addEventListener('animationend', () => {
 function showLogin() {
   const pathInput = <HTMLInputElement>loginDiv.querySelector('#path input')
   const protocolInput = <HTMLInputElement>loginDiv.querySelector('#protocol input[type="text"]')
-  const keepInput = <HTMLInputElement>loginDiv.querySelector('#protocol input[type="checkbox"]')
   const connectButton = <HTMLElement>loginDiv.querySelector('#connect button')
   const connectSpan = <HTMLSpanElement>loginDiv.querySelector('#connect span')
   if (location.hash !== '') {
@@ -55,7 +54,6 @@ function showLogin() {
   }
   connectButton.onclick = async () => {
     const protocols = [protocolInput.value]
-    if (keepInput.checked) protocols.push('keep')
     const connected = await options.connect(pathInput.value, protocols)
     if (connected) login()
     else connectSpan.innerText = '连接失败'
@@ -251,11 +249,15 @@ function getConfigTemplate(config: config | userData): DocumentFragment {
         break
       case 'numberArray':
         inputInput.value = (<number[]>configValue).join(',')
-        inputInput.oninput = () => config[key] = inputInput.value.split(',').map(value => { return parseInt(value) })
+        inputInput.oninput = () => config[key] = inputInput.value.split(',').map(value => parseInt(value))
         break
       case 'string':
         inputInput.value = <string>configValue
         inputInput.oninput = () => config[key] = inputInput.value
+        break
+      case 'stringArray':
+        inputInput.value = (<string[]>configValue).join(',')
+        inputInput.oninput = () => config[key] = inputInput.value.split(',')
         break
       case 'boolean':
         checkboxInput.checked = <boolean>configValue

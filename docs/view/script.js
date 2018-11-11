@@ -54,7 +54,6 @@ dDiv.addEventListener('animationend', () => {
 function showLogin() {
     const pathInput = loginDiv.querySelector('#path input');
     const protocolInput = loginDiv.querySelector('#protocol input[type="text"]');
-    const keepInput = loginDiv.querySelector('#protocol input[type="checkbox"]');
     const connectButton = loginDiv.querySelector('#connect button');
     const connectSpan = loginDiv.querySelector('#connect span');
     if (location.hash !== '') {
@@ -66,8 +65,6 @@ function showLogin() {
     }
     connectButton.onclick = () => __awaiter(this, void 0, void 0, function* () {
         const protocols = [protocolInput.value];
-        if (keepInput.checked)
-            protocols.push('keep');
         const connected = yield options.connect(pathInput.value, protocols);
         if (connected)
             login();
@@ -281,11 +278,15 @@ function getConfigTemplate(config) {
                 break;
             case 'numberArray':
                 inputInput.value = configValue.join(',');
-                inputInput.oninput = () => config[key] = inputInput.value.split(',').map(value => { return parseInt(value); });
+                inputInput.oninput = () => config[key] = inputInput.value.split(',').map(value => parseInt(value));
                 break;
             case 'string':
                 inputInput.value = configValue;
                 inputInput.oninput = () => config[key] = inputInput.value;
+                break;
+            case 'stringArray':
+                inputInput.value = configValue.join(',');
+                inputInput.oninput = () => config[key] = inputInput.value.split(',');
                 break;
             case 'boolean':
                 checkboxInput.checked = configValue;

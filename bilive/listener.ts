@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
+import Client from './client_re'
 import DMclient from './dm_client_re'
-import { apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname, _options } from './index'
+import Options, { apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname } from './options'
 /**
  * 监听服务器消息
  *
@@ -31,92 +32,79 @@ class Listener extends EventEmitter {
   private _smallTVID: Set<number> = new Set()
   private _raffleID: Set<number> = new Set()
   private _lotteryID: Set<number> = new Set()
+  private _beatStormID: Set<number> = new Set()
   private _MSGCache: Set<string> = new Set()
+  /**
+   * 抽奖更新时间
+   *
+   * @private
+   * @type {number}
+   * @memberof Listener
+   */
+  private _lastUpdate: number = Date.now()
   /**
    * 开始监听
    *
    * @memberof Listener
    */
-  public async Start() {
-    this._addAreaRoom()
-    // 10s清空一次消息缓存
-    setInterval(() => this._MSGCache.clear(), 10 * 1000)
-    await tools.Sleep(24 * 60 * 60 * 1000)//每天重设监听方法
-    this.Stop()
-    this.Start()
-  }
-  /**
-   * 停止监听
-   *
-   * @memberof Listener
-   */
-  public async Stop() {
-    for (let roomOrder=50;roomOrder<90;roomOrder++) {
-      const roomDM = <DMclient>this._DMclient.get(roomOrder)
-      roomDM.removeAllListeners().Close()
-      this._DMclient.delete(roomOrder)
+  public Start() {
+    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
+    switch (Options._.config.listenMethod) {
+      case 0: { // 只使用本地监听方法
+        this.updateAreaRoom()
+        break
+      }
+      case 1: { // 只使用远程服务器监听
+        if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
+        break
+      }
+      case 2: { // 我全都要
+        this.updateAreaRoom()
+        if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
+        break
+      }
+      default: break
     }
-    await tools.Sleep(5 * 1000)
+    // 3s清空一次消息缓存
+    setInterval(() => this._MSGCache.clear(), 3 * 1000)
   }
   /**
-   * 获取各分区开播房间
-   *
-   * @private
+   * 更新分区房间
    *
    * @memberof Listener
    */
-  private async _addAreaRoom(id?: number,oldroom?: number) {
-    const userID = _options.config.defaultUserID
-    const getAllList = await tools.XHR<getAllList>({// 获取直播列表
+  public async updateAreaRoom() {
+    const userID = Options._.config.defaultUserID
+    // 获取直播列表
+    const getAllList = await tools.XHR<getAllList>({
       uri: `${apiLiveOrigin}/room/v2/AppIndex/getAllList?${AppClient.baseQuery}`,
       json: true
     }, 'Android')
     if (getAllList !== undefined && getAllList.response.statusCode === 200 && getAllList.body.code === 0) {
-      let moduleList = getAllList.body.data.module_list
-      if (id !== undefined) {
-        while (moduleList[0].module_info.id !== id) {
-          moduleList.splice(0, 1)
-        }
-        moduleList.splice(1, moduleList.length - 1)
-      }
-      moduleList.forEach(modules => {
-        if (modules.module_info.type === 9 && modules.list.length > 0) {
-          const areaID = modules.module_info.id
-          const areaRooms = (<getAllListDataRooms>modules).list
-          let order = 0, i = 0
-          while (order < _options.config.listenNumber) {
-            let Room = areaRooms[i]
-            const roomID = Room.roomid
-            const roomOrder = areaID * 10 + order
-            const roomDM = <DMclient>this._DMclient.get(roomOrder)
-            if (oldroom !== undefined && roomID === oldroom) {}
-            else if (roomDM === undefined || roomDM.roomID !== roomID) {
-              if (roomDM !== undefined) {
-                roomDM.removeAllListeners().Close()
-                this._DMclient.delete(roomOrder)
-              }
-              const newDMclient = new DMclient({ roomID, userID })
-              newDMclient
-                .on('SYS_MSG', dataJson => this._SYSMSGHandler(dataJson))
-                .on('SYS_GIFT', dataJson => this._SYSGiftHandler(dataJson))
-                .on('GUARD_MSG', dataJson => this._LotteryHandler(dataJson))
-                .on('PREPARING', async () => {
-                  await tools.Sleep(5 * 1000)
-                  this._addAreaRoom(areaID, roomID)
-                })
-                .Connect()
-              this._DMclient.set(roomOrder, newDMclient)
-              order++
-            }
-            i++
-          }
+      const roomIDs: Set<number> = new Set()
+      // 获取房间列表
+      getAllList.body.data.module_list.forEach(modules => {
+        if (modules.module_info.type === 9 && modules.list.length > 2) {
+          for (let i = 0; i < 3; i++) roomIDs.add((<getAllListDataRoomList>modules.list[i]).roomid)
         }
       })
-    }
-    else {
-      await tools.Sleep(2 * 1000)
-      if (id !== undefined) this._addAreaRoom(id)
-      else this._addAreaRoom()
+      // 添加房间
+      roomIDs.forEach(roomID => {
+        if (this._DMclient.has(roomID)) return
+        const newDMclient = new DMclient({ roomID, userID })
+        newDMclient
+          .on('SYS_MSG', dataJson => this._SYSMSGHandler(dataJson))
+          .on('SYS_GIFT', dataJson => this._SYSGiftHandler(dataJson))
+          .on('GUARD_MSG', dataJson => this._LotteryHandler(dataJson))
+          .Connect()
+        this._DMclient.set(roomID, newDMclient)
+      })
+      // 移除房间
+      this._DMclient.forEach((roomDM, roomID) => {
+        if (roomIDs.has(roomID)) return
+        roomDM.removeAllListeners().Close()
+        this._DMclient.delete(roomID)
+      })
     }
   }
   /**
@@ -125,9 +113,31 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   public clearAllID() {
+    if (Date.now() - this._lastUpdate < 3 * 60 * 1000) return
     this._smallTVID.clear()
     this._raffleID.clear()
     this._lotteryID.clear()
+    this._beatStormID.clear()
+  }
+  /**
+   * 房间监听
+   *
+   * @private
+   * @param {string} server
+   * @param {string} protocol
+   * @memberof Listener
+   */
+  private _RoomListener(server: string, protocol: string) {
+    const client = new Client(server, protocol)
+    client
+      .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+      .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+      .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+      .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
+      .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
+      .Connect()
+    tools.Log(`已连接到 ${Options._.config.serverURL}`)
+    Options.on('clientUpdate', () => client.Update())
   }
   /**
    * 监听弹幕系统消息
@@ -142,7 +152,7 @@ class Listener extends EventEmitter {
     const url = apiLiveOrigin + smallTVPathname
     const roomID = dataJson.real_roomid
     await tools.Sleep(15 * 1000)
-    this._RaffleCheck(url, roomID, 'smallTV')
+    this._RaffleCheck(url, roomID)
   }
   /**
    * 监听系统礼物消息
@@ -156,7 +166,7 @@ class Listener extends EventEmitter {
     this._MSGCache.add(dataJson.msg_text)
     const url = apiLiveOrigin + rafflePathname
     const roomID = dataJson.real_roomid
-    this._RaffleCheck(url, roomID, 'raffle')
+    this._RaffleCheck(url, roomID)
   }
   /**
    * 监听Lottery消息
@@ -185,10 +195,9 @@ class Listener extends EventEmitter {
    * @private
    * @param {string} url
    * @param {number} roomID
-   * @param {('smallTV' | 'raffle')} raffle
    * @memberof Listener
    */
-  private async _RaffleCheck(url: string, roomID: number, raffle: 'smallTV' | 'raffle') {
+  private async _RaffleCheck(url: string, roomID: number) {
     const raffleCheck = await tools.XHR<raffleCheck>({
       uri: `${url}/check?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
       json: true
@@ -197,12 +206,14 @@ class Listener extends EventEmitter {
       && raffleCheck.body.code === 0 && raffleCheck.body.data.list.length > 0) {
       raffleCheck.body.data.list.forEach(data => {
         const message: message = {
-          cmd: raffle,
+          cmd: data.type === 'small_tv' ? 'smallTV' : 'raffle',
           roomID,
           id: +data.raffleId,
           type: data.type,
           title: data.title,
-          time: +data.time_wait
+          time: +data.time_wait,
+          max_time: +data.max_time,
+          time_wait: +data.time_wait
         }
         this._RaffleHandler(message)
       })
@@ -240,13 +251,12 @@ class Listener extends EventEmitter {
    * 监听抽奖消息
    *
    * @private
-   * @param {message} raffleMSG
+   * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
    * @memberof Listener
    */
-  private async _RaffleHandler(raffleMSG: message) {
-    const roomID = raffleMSG.roomID
-    const id = raffleMSG.id
-    switch (raffleMSG.cmd) {
+   private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
+     const { cmd, id, roomID, title } = raffleMessage
+     switch (cmd) {
       case 'smallTV':
         if (this._smallTVID.has(id)) return
         this._smallTVID.add(id)
@@ -259,11 +269,16 @@ class Listener extends EventEmitter {
         if (this._lotteryID.has(id)) return
         this._lotteryID.add(id)
         break
+      case 'beatStorm':
+        if (this._beatStormID.has(id)) return
+        this._beatStormID.add(id)
+        break
       default: return
     }
-    this.emit('raffle', raffleMSG)
-    tools.Log(`房间 ${tools.getShortRoomID(roomID)} 开启了第 ${id} 轮${raffleMSG.title}`)
-    await tools.Sleep(3 * 1000)
+    // 更新时间
+    this._lastUpdate = Date.now()
+    this.emit(cmd, raffleMessage)
+    tools.Log(`房间 ${tools.getShortRoomID(roomID)} 开启了第 ${id} 轮${title}`)
   }
 }
 export default Listener

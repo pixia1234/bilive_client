@@ -1,19 +1,19 @@
 import tools from './lib/tools'
 import Online from './online'
 import AppClient from './lib/app_client'
-import { liveOrigin, apiVCOrigin, apiLiveOrigin, _options, _user } from './index'
+import Options, { liveOrigin, apiOrigin, apiVCOrigin, apiLiveOrigin } from './options'
 /**
- * Creates an instance of User.
+ * Creates an instance of Daily.
  *
- * @class User
+ * @class Daily
  * @extends {Online}
  */
-class User extends Online {
+class Daily extends Online {
   /**
-   * Creates an instance of User.
+   * Creates an instance of Daily.
    * @param {string} uid
    * @param {userData} userData
-   * @memberof User
+   * @memberof Daily
    */
   constructor(uid: string, userData: userData) {
     super(userData)
@@ -31,33 +31,34 @@ class User extends Online {
    * 'captcha'为登录需要验证码, 若无法处理需Stop()
    *
    * @returns {(Promise<'captcha' | 'stop' | void>)}
-   * @memberof User
+   * @memberof Daily
    */
   public Start(): Promise<'captcha' | 'stop' | void> {
-    if (!_user.has(this.uid)) _user.set(this.uid, this)
+    // @ts-ignore 继承属性
+    if (!Options.user.has(this.uid)) Options.user.set(this.uid, this)
     return super.Start()
   }
   /**
    * 停止挂机
    *
-   * @memberof User
+   * @memberof Daily
    */
   public Stop() {
-    _user.delete(this.uid)
+    Options.user.delete(this.uid)
     return super.Stop()
   }
   /**
    * 零点重置
    * 为了少几个定时器, 统一由外部调用
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async nextDay() {
     // 每天刷新token和cookie
     const refresh = await this.refresh()
     if (refresh.status === AppClient.status.success) {
       this.jar = tools.setCookie(this.cookieString)
-      tools.Options(_options)
+      Options.save()
     }
     else if (refresh.status === AppClient.status.error) {
       const status = await this._tokenError()
@@ -71,7 +72,7 @@ class User extends Online {
   /**
    * 日常
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async daily() {
     await this.sign()
@@ -80,11 +81,12 @@ class User extends Online {
     this.silver2coin()
     this.sendGift()
     this.signGroup()
+    this.bilibili()
   }
   /**
    * 每日签到
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async sign() {
     if (this._sign || !this.userData.doSign) return
@@ -114,10 +116,11 @@ class User extends Online {
   /**
    * 每日宝箱
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async treasureBox() {
     if (this._treasureBox || !this.userData.treasureBox) return
+    if (new Date().getTime() - this.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
     // 获取宝箱状态,换房间会重新冷却
     const currentTask = await tools.XHR<currentTask>({
       uri: `${apiLiveOrigin}/mobile/freeSilverCurrentTask?${AppClient.signQueryBase(this.tokenQuery)}`,
@@ -126,6 +129,11 @@ class User extends Online {
     }, 'Android')
     if (currentTask !== undefined && currentTask.response.statusCode === 200) {
       if (currentTask.body.code === 0) {
+        if (this.userData.ban) {
+          tools.sendSCMSG(`${this.nickname} 已解除封禁`)
+          this.userData.ban = false
+          this.userData.banTime = 0
+        }
         await tools.Sleep(currentTask.body.data.minute * 6e4)
         await tools.XHR<award>({
           uri: `${apiLiveOrigin}/mobile/freeSilverAward?${AppClient.signQueryBase(this.tokenQuery)}`,
@@ -138,53 +146,41 @@ class User extends Online {
         this._treasureBox = true
         tools.Log(this.nickname, '每日宝箱', '已领取所有宝箱')
       }
+      else if (currentTask.body.code === 400) {
+        if (!this.userData.ban) {
+          tools.sendSCMSG(`${this.nickname} 已被封禁`)
+          this.userData.ban = true
+        }
+        this.userData.banTime = new Date().getTime()
+        return
+      }
     }
+    Options.save()
   }
   /**
    * 每日任务
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async eventRoom() {
     if (this._eventRoom || !this.userData.eventRoom) return
-    const tasks = []
-    // 获取任务列表
-    const roomID = _options.config.eventRooms[0]
-    const taskInfo = await tools.XHR<taskInfo>({
-      uri: `${apiLiveOrigin}/i/api/taskInfo`,
+    const doubleWatchTask = await tools.XHR<{ code: number }>({ // 做任务
+      method: 'POST',
+      uri: `${apiLiveOrigin}/activity/v1/task/receive_award`,
+      body: `task_id=double_watch_task`,
       jar: this.jar,
       json: true,
-      headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(roomID)}` }
+      headers: { 'Referer': `${liveOrigin}/p/center/index` }
     })
-    if (taskInfo === undefined || taskInfo.response.statusCode !== 200) return
-    if (taskInfo.body.code == 0) {
-      const taskData = taskInfo.body.data
-      for (const i in taskData) if (taskData[i].task_id !== undefined) tasks.push(taskData[i].task_id)
-      // 做任务
-      let ok = 0
-      for (const taskID of tasks) {
-        const taskres = await tools.XHR({
-          method: 'POST',
-          uri: `${apiLiveOrigin}/activity/v1/task/receive_award`,
-          body: `task_id=${taskID}`,
-          jar: this.jar,
-          json: true,
-          headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(roomID)}` }
-        })
-        if (taskres !== undefined && taskres.response.statusCode === 200 && (taskres.response.body.code === 0 || taskres.response.body.code === -400)) ok++
-        if (ok === tasks.length) {
-          this._eventRoom = true
-          tools.Log(this.nickname, '每日任务', '每日任务已完成')
-        }
-        await tools.Sleep(3000)
-      }
-    }
-    else tools.Log(this.nickname, '每日任务', taskInfo.body.msg)
+    if (doubleWatchTask === undefined || doubleWatchTask.response.statusCode !== 200) return
+    if (doubleWatchTask.body.code === 0 || doubleWatchTask.body.code === -400)
+      tools.Log(this.nickname, '每日任务', '每日任务已完成')
+    else tools.Log(this.nickname, '每日任务', doubleWatchTask.body)
   }
   /**
    * 银瓜子兑换硬币
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async silver2coin() {
     if (this._silver2coin || !this.userData.silver2coin) return
@@ -208,7 +204,7 @@ class User extends Online {
   /**
    * 自动送礼
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async sendGift() {
     if (!this.userData.sendGift || this.userData.sendGiftRoom === 0) return
@@ -260,13 +256,13 @@ class User extends Online {
   /**
    * 自动送礼V2？
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async autoSend() {
     if (!this.userData.autoSend) return
     // 获取佩戴勋章信息
     const uid = this.userData.biliUID
-    const WearInfo = await tools.XHR<WearInfo>({
+    const wearInfo = await tools.XHR<wearInfo>({
       method: `POST`,
       uri: `${apiLiveOrigin}/live_user/v1/UserInfo/get_weared_medal`,
       body: `source=1&uid=${uid}&target_id=11153765&csrf_token=${tools.getCookie(this.jar, 'bili_jct')}`,//使用3号直播间查询
@@ -274,16 +270,15 @@ class User extends Online {
       jar: this.jar,
       headers: this.headers
     })
-    if (WearInfo === undefined || WearInfo.response.statusCode !== 200 || WearInfo.body.code !== 0) return
-    if (WearInfo.body.data !== null) {
-      const room_id = WearInfo.body.data.roominfo.room_id
-      const mid = WearInfo.body.data.roominfo.uid
-      const day_limit = WearInfo.body.data.day_limit
-      const today_feed  = parseInt(WearInfo.body.data.today_feed)
+    if (wearInfo === undefined || wearInfo.response.statusCode !== 200 || wearInfo.body.code !== 0) return
+    if (wearInfo.body.data !== null) {
+      const room_id = wearInfo.body.data.roominfo.room_id
+      const mid = wearInfo.body.data.roominfo.uid
+      const day_limit = wearInfo.body.data.day_limit
+      const today_feed = parseInt(wearInfo.body.data.today_feed)
       let intimacy_needed = day_limit - today_feed
       if (intimacy_needed === 0) return tools.Log(this.nickname,`亲密度已达上限`)
       // 获取包裹信息
-      let gift_value = 0, bag_value = 0, send_num = 0
       const bagInfo = await tools.XHR<bagInfo>({
         uri: `${apiLiveOrigin}/gift/v2/gift/m_bag_list?${AppClient.signQueryBase(this.tokenQuery)}`,
         json: true,
@@ -294,37 +289,25 @@ class User extends Online {
         if (bagInfo.body.data.length > 0) {
           for (const giftData of bagInfo.body.data) {
             if (giftData.expireat > 0) {
-              switch (giftData.gift_id) {//Gift_Config from http://api.live.bilibili.com/gift/v3/live/gift_config
-                case 1:
-                  gift_value = 1
-                  bag_value = gift_value * giftData.gift_num//辣条
+              let gift_value = 0, bag_value = 0, send_num = 0
+              switch (giftData.gift_id) {// Gift_Config from http://api.live.bilibili.com/gift/v3/live/gift_config
+                case 1: gift_value = 1//辣条
                 break
-                case 3:
-                  gift_value = 99
-                  bag_value = gift_value * giftData.gift_num//B坷垃
+                case 3: gift_value = 99//B坷垃
                 break
-                case 4:
-                  gift_value = 52
-                  bag_value = gift_value * giftData.gift_num//喵娘
+                case 4: gift_value = 52//喵娘
                 break
-                case 6:
-                  gift_value = 10
-                  bag_value = gift_value * giftData.gift_num//亿圆
+                case 6: gift_value = 10//亿圆
                 break
-                case 9:
-                  gift_value = 4500
-                  bag_value = gift_value * giftData.gift_num//爱心便当
+                case 9: gift_value = 4500//爱心便当
                 break
-                case 10:
-                  gift_value = 19900
-                  bag_value = gift_value * giftData.gift_num//蓝白胖次
+                case 10: gift_value = 19900//蓝白胖次
                 break
-                case 30054:
-                  gift_value = 5000
-                  bag_value = gift_value * giftData.gift_num//粉丝卡，什么玩意儿
+                case 30054: gift_value = 5000//粉丝卡，什么玩意儿
                 break
-                default: break
+                default: continue
               }
+              bag_value = gift_value * giftData.gift_num
               if (intimacy_needed >= bag_value) send_num = giftData.gift_num
               else send_num = Math.floor(intimacy_needed / gift_value)
               if (send_num > 0) {
@@ -358,7 +341,7 @@ class User extends Online {
   /**
    * 应援团签到
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async signGroup() {
     if (!this.userData.signGroup) return
@@ -390,34 +373,36 @@ class User extends Online {
   /**
    * 获取个人信息
    *
-   * @memberof User
+   * @memberof Daily
    */
   public async getUserInfo() {
     if (!this.userData.getUserInfo) return
-    const UserInfo = await tools.XHR<UserInfo>({
+    const userInfo = await tools.XHR<userInfo>({
       uri: `${apiLiveOrigin}/User/getUserInfo?ts=${AppClient.TS}`,
       json: true,
       jar: this.jar,
       headers: this.headers
     })
-    if (UserInfo === undefined || UserInfo.response.statusCode !== 200) return
-    if (UserInfo.body.code === 'REPONSE_OK') {
-      const InfoData = UserInfo.body.data
+    if (userInfo === undefined || userInfo.response.statusCode !== 200) return
+    if (userInfo.body.code === 'REPONSE_OK') {
+      const InfoData = userInfo.body.data
+      let ban: string = ""
+      this.userData.ban ? ban = '已封禁' : ban = '未封禁'
       tools.Log(this.nickname,`ID:${InfoData.uname}  LV${InfoData.user_level} EXP:${InfoData.user_intimacy}/${InfoData.user_next_intimacy} 排名:${InfoData.user_level_rank}`)
-      tools.Log(`金瓜子：${InfoData.gold} 银瓜子：${InfoData.silver} 硬币：${InfoData.billCoin} 当前状态：${this.userData.ban}`);
+      tools.Log(`金瓜子：${InfoData.gold} 银瓜子：${InfoData.silver} 硬币：${InfoData.billCoin} 当前状态：${ban}`);
     }
     else tools.Log(this.nickname,'获取个人信息失败')
     let MedalNum = 0
-    const MedalInfo = await tools.XHR<MedalInfo>({
+    const medalInfo = await tools.XHR<medalInfo>({
       uri: `${apiLiveOrigin}/i/api/medal?page=1&pageSize=25`,
       json: true,
       jar: this.jar,
       headers: this.headers
     })
-    if (MedalInfo === undefined) return
+    if (medalInfo === undefined) return
     else {
-      if (MedalInfo.response.statusCode === 200 && MedalInfo.body.code === 0) {
-        const MedalData = MedalInfo.body.data
+      if (medalInfo.response.statusCode === 200 && medalInfo.body.code === 0) {
+        const MedalData = medalInfo.body.data
         if (MedalData.count === 0) tools.Log(this.nickname,`无勋章`)
         else {
           MedalData.fansMedalList.forEach(Medal => {
@@ -431,96 +416,110 @@ class User extends Online {
     }
   }
   /**
-   * 获取礼物包裹信息
+   * 主站
    *
-   * @memberof User
+   * @memberof Daily
    */
-  public async getGiftBag() {
-    if (!this.userData.getGiftBag) return
-    const bagInfo = await tools.XHR<bagInfo>({
-      uri: `${apiLiveOrigin}/gift/v2/gift/m_bag_list?${AppClient.signQueryBase(this.tokenQuery)}`,
-      json: true,
-      headers: this.headers
-    }, 'Android')
-    if (bagInfo === undefined || bagInfo.response.statusCode !== 200) return
-    if (bagInfo.body.code === 0) {
-      if (bagInfo.body.data.length > 0) {
-        let str = ``
-        let order = 0
-        for (const giftData of bagInfo.body.data) {
-          order++
-          if (giftData.expireat > 0) {
-            let expireStr = ''
-            if (giftData.expireat / (24 * 60 * 60) >= 1) expireStr = `${Math.floor((giftData.expireat / (24 * 60 * 60))) + 1}天`
-            else if (giftData.expireat / (60 * 60) >= 1) expireStr = `${Math.floor((giftData.expireat / (60 * 60))) + 1}小时`
-            else if (giftData.expireat / 60 >= 1) expireStr = `${Math.floor((giftData.expireat / 60)) + 1}分钟`
-            if (order < bagInfo.body.data.length) str = str + `包裹${order}：${giftData.gift_num}个${giftData.gift_name}，有效期${expireStr}\n`
-            else str = str + `包裹${order}：${giftData.gift_num}个${giftData.gift_name}，有效期${expireStr}`
-          }
-          else {
-            if (order < bagInfo.body.data.length) str = str + `包裹${order}：${giftData.gift_num}个${giftData.gift_name}，永久礼物\n`
-            else str = str + `包裹${order}：${giftData.gift_num}个${giftData.gift_name}，永久礼物`
-          }
-        }
-        tools.Log(`用户 ${this.nickname} 的礼物情况:\n${str}`)
-      }
-      else tools.Log(this.nickname, `包裹空空的`)
-    }
-    else tools.Log(this.nickname, `获取礼物包裹信息失败`)
-  }
-  /**
-   * 获取并领取不同房间的上船信息
-   *
-   * @memberof User
-   */
-   public async getGuard() {
-     const guardInfosRAW = await tools.XHR({
-       uri: `http://118.25.108.153:8080/guard`,
-       json: true
+   public async bilibili() {
+     if (!this.userData.main) return
+     let ts = new Date().getTime()
+     let avs: number[] = []
+     let mids: number[] = []
+     const attentions = await tools.XHR<attentions>({
+       uri: `${apiOrigin}/x/relation/followings?vmid=${this.biliUID}&ps=50&order=desc`,
+       jar: this.jar,
+       json: true,
+       headers: { "Host": "api.bilibili.com" }
      })
-     if (guardInfosRAW === undefined) return
-     let guardInfos = <guardInfos>({
-       data: []
+     if (attentions !== undefined && attentions.body.data.list.length > 0) attentions.body.data.list.forEach(item => mids.push(item.mid))
+     if (this.userData.mainCoin && this.userData.mainCoinGroup.length > 0) mids = this.userData.mainCoinGroup
+     mids.forEach(async (mid) => {
+       const getSummitVideo = await tools.XHR<getSummitVideo>({
+         uri: `https://space.bilibili.com/ajax/member/getSubmitVideos?mid=${mid}&pagesize=100&tid=0`,
+         json: true
+       })
+       if (getSummitVideo !== undefined && getSummitVideo.body.data.vlist.length > 0) getSummitVideo.body.data.vlist.forEach(item => {avs.push(item.aid)})
+       await tools.Sleep(2000)
      })
-     guardInfos.data = <guardInfo[]>guardInfosRAW.body
-     for (let i=0;i<guardInfos.data.length;i++) {
-       let guardInfo = guardInfos.data[i]
-       let guardType = '';
-       if (guardInfo.Guard === 'Governor') continue
-       if (guardInfo.Guard === 'Praefect') guardType = '提督'
-       if (guardInfo.Guard === 'Captain') guardType = '舰长'
-       await tools.XHR({//_WebEntry 虽然好像没什么用还是写进来
+     let aid = avs[Math.floor(Math.random()*(avs.length))]
+     let cid = await (async function(aid) {
+       const getCid = await tools.XHR<any>({
+         uri: `https://www.bilibili.com/widget/getPageList?aid=${aid}`,
+         json: true
+       })
+       if (getCid === undefined) return
+       let cids = <getCid>({ data: [] })
+       cids.data = <cid[]>getCid.body
+       return cids.data[0].cid
+     }(aid))
+     const shareAV = await tools.XHR<shareAV>({
+       method: 'POST',
+       uri: `https://app.bilibili.com/x/v2/view/share/add`,
+       body: AppClient.signQuery(`access_key=${this.accessToken}&aid=${aid}&appkey=${AppClient.appKey}&build=${AppClient.build}&from=7&mobi_app=android&platform=android&ts=${ts}`),
+       jar: this.jar,
+       json: true,
+       headers: { "Host": "app.bilibili.com" }
+     }, 'Android')
+     if (shareAV !== undefined && shareAV.body.code === 0) tools.Log(this.nickname, `已完成主站分享，经验+5`)
+     const avHeart = await tools.XHR<avHeart>({
+       method: 'POST',
+       uri: `${apiOrigin}/x/report/web/heartbeat`,
+       body: `aid=${aid}&cid=${cid}&mid=${this.biliUID}&csrf=${tools.getCookie(this.jar, 'bili_jct')}&played_time=3&realtime=3&start_ts=${ts}&type=3&dt=2&play_type=1`,
+       jar: this.jar,
+       json: true,
+       headers: {
+         "Host": "api.bilibili.com",
+         "Referer": `https://www.bilibili.com/video/av${aid}`
+       }
+     })
+     if (avHeart !== undefined && avHeart.body.code === 0) tools.Log(this.nickname, `已完成主站观看，经验+5`)
+     if (!this.userData.mainCoin) return
+     const mainUserInfo = await tools.XHR<mainUserInfo>({
+       uri: `https://account.bilibili.com/home/userInfo`,
+       jar: this.jar,
+       json: true,
+       headers: {
+         "Referer": `https://account.bilibili.com/account/home`,
+         "Host": `account.bilibili.com`
+       }
+     })
+     if (mainUserInfo === undefined) return
+     let coins = mainUserInfo.body.data.coins
+     const mainReward = await tools.XHR<mainReward>({
+       uri: `https://account.bilibili.com/home/reward`,
+       jar: this.jar,
+       json: true,
+       headers: {
+         "Referer": `https://account.bilibili.com/account/home`,
+         "Host": `account.bilibili.com`
+       }
+     })
+     if (mainReward === undefined) return
+     let coins_av = mainReward.body.data.coins_av
+     while (coins > 0 && coins_av < 50 && avs.length > 0) {
+       let i = Math.floor(Math.random()*(avs.length))
+       let aid = avs[i]
+       const coinAdd = await tools.XHR<coinAdd>({
          method: 'POST',
-         uri: `${apiLiveOrigin}/room/v1/Room/room_entry_action`,
+         uri: `${apiOrigin}/x/web-interface/coin/add`,
+         body: `aid=${aid}&multiply=1&cross_domain=true&csrf=${tools.getCookie(this.jar, 'bili_jct')}`,
          jar: this.jar,
          json: true,
-         headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(guardInfo.OriginRoomId)}` }
+         headers: {
+           "Referer": `https://www.bilibili.com/av${aid}`,
+           "Origin": "https://www.bilibili.com",
+           "Host": `api.bilibili.com`
+         }
        })
-       const guardRoom = await tools.XHR<guardRoom>({
-         uri: `${apiLiveOrigin}/lottery/v1/Lottery/check_guard?roomid=${guardInfo.OriginRoomId}`,
-         json: true,
-         headers: this.headers
-       })
-       await tools.Sleep(10 * 1000)
-       if (guardRoom === undefined) continue
-       if (guardRoom.body.code === 0 && guardRoom.body.data.length > 0) {
-         guardRoom.body.data.forEach(async (data) => {
-           const guardJoin = await tools.XHR<guardJoin>({
-             method: 'POST',
-             uri: `${apiLiveOrigin}/lottery/v2/Lottery/join`,
-             body: `roomid=${guardInfo.OriginRoomId}&id=${data.id}&type=guard&csrf_token=${tools.getCookie(this.jar, 'bili_jct')}`,
-             jar: this.jar,
-             json: true,
-             headers: this.headers
-           })
-           if (guardJoin === undefined) return
-           if (guardJoin.body.code === 0) tools.Log(this.nickname, `${guardInfo.OriginRoomId} ${guardType}奖励`, guardJoin.body.data.message)
-           await tools.Sleep(10 * 1000)
-         })
+       if (coinAdd === undefined || coinAdd.body.code === 34005) continue
+       if (coinAdd.body.code === 0) {
+         coins--
+         coins_av = coins_av + 10
        }
-       await tools.Sleep(30 * 1000)
+       avs.splice(i,1)
+       await tools.Sleep(2000)
      }
-     tools.Log(this.nickname, `已完成提督、舰长亲密度检查`)
+     tools.Log(this.nickname, `已完成主站投币，经验+${coins_av}`)
    }
 }
-export default User
+export default Daily
