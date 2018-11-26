@@ -7,7 +7,7 @@
   },
   "config": {
     "defaultUserID": 0,
-    "listenMethod": 0,
+    "listenMethod": 2,
     "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
     "listenNumber": 3,
     "eventRooms": [

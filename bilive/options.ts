@@ -134,4 +134,4 @@ const rafflePathname = '/activity/v1/Raffle'
 const lotteryPathname = '/lottery/v2/Lottery'
 const beatStormPathname = '/lottery/v1/Storm'
 export default new Options()
-export { liveOrigin, apiOrigin, apiVCOrigin, apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname, beatStormPathname }
+export { Options as __Options, liveOrigin, apiOrigin, apiVCOrigin, apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname, beatStormPathname }

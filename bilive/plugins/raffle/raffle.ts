@@ -189,7 +189,7 @@ class Raffle {
         const content = joinStorm.body.data
         if (content !== undefined && content.gift_num > 0)
           tools.Log(this._user.nickname, title, id, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
-        else tools.Log(this._user.nickname, title, id, joinStorm.body)
+        else tools.Log(this._user.nickname, title, id, joinStorm.body.msg)
       }
     })
   }
