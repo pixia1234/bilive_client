@@ -75,6 +75,8 @@ class Options extends EventEmitter {
     'refreshToken',
     'cookie',
     'status',
+    'ban',
+    'banTime',
     'doSign',
     'treasureBox',
     'eventRoom',
