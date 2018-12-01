@@ -22,7 +22,7 @@ function getHeaders(platform: string): request.Headers {
         'Connection': 'keep-alive',
         'Cookie': 'l=v',
         'Origin': liveOrigin,
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; G8142 Build/47.1.A.12.270; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.91 Mobile Safari/537.36 BiliApp/5341000',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; G8142 Build/47.1.A.12.270; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.106 Mobile Safari/537.36 BiliApp/5341000',
         'X-Requested-With': 'tv.danmaku.bili'
       }
     default:

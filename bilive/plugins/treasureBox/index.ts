@@ -46,7 +46,7 @@ class TreasureBox extends Plugin {
    */
   private _treasureBox(users: Map<string, User>) {
     users.forEach((user, uid) => {
-      if (new Date().getTime() - user.userData.banTime < 12 * 3600) return // 12h
+      if (user.userData.ban && new Date().getTime() - user.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
       this._treasureBoxUser(uid, user)
     })
   }
@@ -87,14 +87,15 @@ class TreasureBox extends Plugin {
         this._treasureBoxList.set(uid, true)
         tools.Log(user.nickname, '宝箱道具', '已领取所有宝箱')
       }
-      else tools.Log(user.nickname, '宝箱道具', currentTask.body)
-      if (currentTask.body.code === 400 && currentTask.body.msg === '访问被拒绝') {
+      else if (currentTask.body.code === 400 && currentTask.body.msg === '访问被拒绝') {
         if (user.userData.ban === false) {
           tools.sendSCMSG(`${user.nickname} 已被封禁`)
           user.userData.ban = true
         }
         user.userData.banTime = new Date().getTime()
+        tools.Log(user.nickname, '宝箱道具', currentTask.body.msg)
       }
+      else tools.Log(user.nickname, '宝箱道具', currentTask.body)
       Options.save()
     }
     else tools.Log(user.nickname, '宝箱道具', '网络错误')

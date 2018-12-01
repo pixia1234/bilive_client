@@ -36,7 +36,8 @@ class GetUserInfo extends Plugin {
     for (const [uid, user] of users) {
       let tmp: any = {
         biliUID: user.userData.biliUID,
-        nickname: user.nickname
+        nickname: user.nickname,
+        ban: user.userData.ban
       }
       tmp['liveData'] = await this._getLiveInfo(user)
       tmp['medalData'] = await this._getMedalInfo(user)

@@ -85,7 +85,7 @@ class Raffle extends Plugin {
   public async msg({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
     if (this._raffle) {
       users.forEach(async user => {
-        if (new Date().getTime() - user.userData.banTime < 12 * 3600) return // 12h
+        if (user.userData.ban && new Date().getTime() - user.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
         if (user.captchaJPEG === '' && user.userData[message.cmd]) {
           const droprate = <number>options.config['droprate']
           if (droprate !== 0 && Math.random() < droprate / 100)
