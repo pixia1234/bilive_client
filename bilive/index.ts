@@ -42,6 +42,11 @@ class BiLive {
     for (const uid in Options._.user) {
       if (!Options._.user[uid].status) continue
       const user = new User(uid, Options._.user[uid])
+      user.on('heartBeat', (uid) => {
+        this._pluginList.forEach(plugin => {
+          if (typeof plugin.noti === 'function') plugin.noti({ cmd: 'heartBeat', msg: uid, users: Options.user })
+        })
+      })
       const status = await user.Start()
       if (status !== undefined) user.Stop()
     }
@@ -66,7 +71,8 @@ class BiLive {
     this._lastTime = cstString
     const cstHour = cst.getUTCHours()
     const cstMin = cst.getUTCMinutes()
-    if (Options._.config.listenMethod !== 1) this._Listener.updateAreaRoom() // 更新监听房间
+    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
+    if (server === undefined || protocol === undefined) this._Listener.updateAreaRoom() // 更新监听房间
     this._Listener.clearAllID() // 清空ID缓存
     this._pluginList.forEach(plugin => { // 插件运行
       if (typeof plugin.loop === 'function') plugin.loop({ cst, cstMin, cstHour, cstString, options: Options._, users: Options.user })

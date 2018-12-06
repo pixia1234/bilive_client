@@ -63,8 +63,8 @@ function getLongRoomID(roomID: number): number {
  * @param {('PC' | 'Android' | 'WebView')} [platform='PC']
  * @returns {Promise<response<T> | undefined>}
  */
- function XHR<T>(options: request.OptionsWithUri, platform: 'PC' | 'Android' | 'WebView' = 'PC'): Promise<XHRresponse<T> | undefined> {
-   return new Promise<XHRresponse<T> | undefined>(resolve => {
+function XHR<T>(options: request.OptionsWithUri, platform: 'PC' | 'Android' | 'WebView' = 'PC'): Promise<XHRresponse<T> | undefined> {
+  return new Promise<XHRresponse<T> | undefined>(resolve => {
     options.gzip = true
     // 添加头信息
     const headers = getHeaders(platform)

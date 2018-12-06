@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events'
 import crypto from 'crypto'
 import request from 'request'
 import tools from './tools'
@@ -18,13 +19,14 @@ enum appStatus {
  *
  * @class AppClient
  */
-class AppClient {
+class AppClient extends EventEmitter {
   /**
    * Creates an instance of AppClient.
    * 创建实例后务必init()
    * @memberof AppClient
    */
   constructor() {
+    super()
   }
   public static readonly actionKey: string = 'appkey'
   public static readonly platform: string = 'android'
@@ -76,14 +78,14 @@ class AppClient {
   public static get RND(): number {
     return Math.floor(Math.random() * 1e+8) + 1e+7
   }
-/**
- * 谜一样的DeviceID
- *
- * @readonly
- * @static
- * @type {string}
- * @memberof AppClient
- */
+  /**
+   * 谜一样的DeviceID
+   *
+   * @readonly
+   * @static
+   * @type {string}
+   * @memberof AppClient
+   */
   public static get DeviceID(): string {
     const words = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     let deviceID = ''

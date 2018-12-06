@@ -117,6 +117,8 @@ class Raffle {
           else {
             const msg = `${this._user.nickname} ${title} ${id} 获得 ${gift.gift_num} 个${gift.gift_name}`
             tools.Log(msg)
+            if (gift.gift_name === '辣条') this._user.userData.gift_taken += (gift.gift_num * 100)
+            else if (gift.gift_name === '银瓜子') this._user.userData.gift_taken += gift.gift_num
             if (gift.gift_name.includes('小电视')) tools.sendSCMSG(msg)
           }
         }
@@ -126,7 +128,7 @@ class Raffle {
             tools.sendSCMSG(`${this._user.nickname} 已被封禁`)
             this._user.userData.ban = true
           }
-          this._user.userData.banTime = new Date().getTime()
+          this._user.userData.banTime = Date.now()
         }
         Options.save()
       }
@@ -156,6 +158,9 @@ class Raffle {
             this._user.userData.banTime = 0
           }
           tools.Log(this._user.nickname, title, id, lotteryReward.body.data.message)
+          let award_type = lotteryReward.body.data.award_type
+          let intimacy = (award_type === 0 ? 20 : (award_type === 1 ? 5 : 1))
+          this._user.userData.int_taken += intimacy
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
         if (lotteryReward.body.code === 400 && lotteryReward.body.msg === '访问被拒绝') {
@@ -163,7 +168,7 @@ class Raffle {
             tools.sendSCMSG(`${this._user.nickname} 已被封禁`)
             this._user.userData.ban = true
           }
-          this._user.userData.banTime = new Date().getTime()
+          this._user.userData.banTime = Date.now()
         }
         Options.save()
       }
@@ -187,8 +192,10 @@ class Raffle {
     tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
       if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
         const content = joinStorm.body.data
-        if (content !== undefined && content.gift_num > 0)
+        if (content !== undefined && content.gift_num > 0) {
           tools.Log(this._user.nickname, title, id, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
+          this._user.userData.gift_taken += (content.gift_num * 1000)
+        }
         else tools.Log(this._user.nickname, title, id, joinStorm.body.msg)
       }
     })
@@ -229,7 +236,7 @@ interface raffleReward {
 interface raffleRewardData {
   raffleId: number
   type: string
-  gift_id: number
+  gift_id: string
   gift_name: string
   gift_num: number
   gift_from: string

@@ -51,22 +51,8 @@ class Listener extends EventEmitter {
    */
   public Start() {
     const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
-    switch (Options._.config.listenMethod) {
-      case 0: { // 只使用本地监听方法
-        this.updateAreaRoom()
-        break
-      }
-      case 1: { // 只使用远程服务器监听
-        if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
-        break
-      }
-      case 2: { // 我全都要
-        this.updateAreaRoom()
-        if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
-        break
-      }
-      default: break
-    }
+    if (server !== undefined && protocol !== undefined) this._RoomListener(server, protocol)
+    else this.updateAreaRoom()
     // 3s清空一次消息缓存
     this._loop = setInterval(() => this._MSGCache.clear(), 3 * 1000)
   }
@@ -184,11 +170,11 @@ class Listener extends EventEmitter {
     if (res === null) return
     const upID = res[0].toString().substr(3)
     const searchCheck = await tools.XHR<searchID>({
-      uri: encodeURI('https://search.bilibili.com/api/search?search_type=live&keyword=' + upID),
+      uri: encodeURI('https://api.bilibili.com/x/web-interface/search/type?jsonp=jsonp&search_type=live&highlight=1&keyword=' + upID + '&callback=__jp1'),
       json: true
     })
-    if (searchCheck === undefined || searchCheck.body.result.live_user === null) return
-    const roomID = searchCheck.body.result.live_user[0].roomid
+    if (searchCheck === undefined || searchCheck.body.data.result.live_user.length === 0) return
+    const roomID = searchCheck.body.data.result.live_user[0].roomid
     this._LotteryCheck(url, roomID)
   }
   /**
@@ -200,6 +186,7 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   private async _RaffleCheck(url: string, roomID: number) {
+    await tools.Sleep(3 * 1000) // 等待3s, 防止土豪刷屏
     const raffleCheck = await tools.XHR<raffleCheck>({
       uri: `${url}/check?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
       json: true
@@ -229,6 +216,7 @@ class Listener extends EventEmitter {
    * @param {number} roomID
    * @memberof Listener
    */
+  // @ts-ignore 暂时无用
   private async _LotteryCheck(url: string, roomID: number) {
     const lotteryCheck = await tools.XHR<lotteryCheck>({
       uri: `${url}/check?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
@@ -242,7 +230,7 @@ class Listener extends EventEmitter {
           roomID,
           id: +data.id,
           type: data.keyword,
-          title: '总督抽奖',
+          title: '舰队抽奖',
           time: 0
         }
         this._RaffleHandler(message)
@@ -256,9 +244,9 @@ class Listener extends EventEmitter {
    * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
    * @memberof Listener
    */
-   private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
-     const { cmd, id, roomID, title } = raffleMessage
-     switch (cmd) {
+  private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
+    const { cmd, id, roomID, title } = raffleMessage
+    switch (cmd) {
       case 'smallTV':
         if (this._smallTVID.has(id)) return
         this._smallTVID.add(id)

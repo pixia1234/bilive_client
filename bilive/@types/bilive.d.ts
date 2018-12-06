@@ -26,7 +26,6 @@ interface server {
 interface config {
   [index: string]: number | string | number[]
   defaultUserID: number
-  listenMethod: number
   serverURL: string
   listenNumber: number
   eventRooms: number[]
@@ -47,6 +46,10 @@ interface userData {
   status: boolean
   ban: boolean
   banTime: number
+  lastHeartTime: number
+  exp_taken: number
+  gift_taken: number
+  int_taken: number
 }
 interface optionsInfo {
   [index: string]: configInfoData
@@ -361,51 +364,55 @@ interface getAllListDataRoomList {
  */
 interface searchID {
   code: number
-  msg: string
-  result: searchIDres
+  data: searchID_Data
+  message: string
+  ttl: number
 }
-interface searchIDres {
-  live_user: User_res[]
+interface searchID_Data {
+  result: searchID_Data_Result
 }
-interface User_res {
+interface searchID_Data_Result {
+  live_user: searchID_Data_Result_User[]
+}
+interface searchID_Data_Result_User {
   roomid: number
-  uid: number
+  mid: number
 }
- /**
-  * 抽奖raffle检查
-  *
-  * @interface raffleCheck
-  */
- interface raffleCheck {
-   code: number
-   msg: string
-   message: string
-   data: raffleCheckData
- }
- interface raffleCheckData {
-   last_raffle_id: number
-   last_raffle_type: string
-   asset_animation_pic: string
-   asset_tips_pic: string
-   list: raffleCheckDataList[]
- }
- interface raffleCheckDataList {
-   raffleId: number
-   title: string
-   type: string
-   from: string
-   from_user: raffleCheckDataListFromuser
-   time_wait: number
-   time: number
-   max_time: number
-   status: number
-   asset_animation_pic: string
-   asset_tips_pic: string
- }
- interface raffleCheckDataListFromuser {
-   uname: string
-   face: string
- }
+/**
+ * 抽奖raffle检查
+ *
+ * @interface raffleCheck
+ */
+interface raffleCheck {
+  code: number
+  msg: string
+  message: string
+  data: raffleCheckData
+}
+interface raffleCheckData {
+  last_raffle_id: number
+  last_raffle_type: string
+  asset_animation_pic: string
+  asset_tips_pic: string
+  list: raffleCheckDataList[]
+}
+interface raffleCheckDataList {
+  raffleId: number
+  title: string
+  type: string
+  from: string
+  from_user: raffleCheckDataListFromuser
+  time_wait: number
+  time: number
+  max_time: number
+  status: number
+  asset_animation_pic: string
+  asset_tips_pic: string
+}
+interface raffleCheckDataListFromuser {
+  uname: string
+  face: string
+}
 /**
  * 抽奖lottery检查
  *
@@ -483,6 +490,7 @@ interface IPlugin {
   start?({ options, users }: { options: options, users: Map<string, User> }): Promise<void>
   loop?({ cst, cstMin, cstHour, cstString, options, users }: { cst: Date, cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }): Promise<void>
   msg?({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
+  noti?({ cmd, msg, users }: { cmd: string, msg: string | number, users: Map<string, User> }): Promise<void>
 }
 /**
  * 个人信息

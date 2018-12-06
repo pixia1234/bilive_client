@@ -7,7 +7,6 @@
   },
   "config": {
     "defaultUserID": 0,
-    "listenMethod": 2,
     "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
     "listenNumber": 3,
     "eventRooms": [
@@ -26,17 +25,16 @@
     "cookie": "",
     "status": false,
     "ban": false,
-    "banTime": 0
+    "banTime": 0,
+    "lastHeartTime": 0,
+    "exp_taken": 0,
+    "gift_taken": 0,
+    "int_taken": 0
   },
   "info": {
     "defaultUserID": {
       "description": "默认监听UID",
       "tip": "用来监听系统消息的用户ID, 默认为0",
-      "type": "number"
-    },
-    "listenMethod": {
-      "description": "监听方法",
-      "tip": "监听抽奖信息的方法，0为本地；1为远程（需设置监听服务器）；2为均采用（需监听服务器）",
       "type": "number"
     },
     "serverURL": {

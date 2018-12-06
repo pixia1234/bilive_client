@@ -7,7 +7,7 @@ class GetUserInfo extends Plugin {
   }
   public name = '用户信息'
   public description = '定时获取用户信息并推送'
-  public version = '0.0.3'
+  public version = '0.0.4'
   public author = 'Vector000'
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     defaultOptions.newUserData['getUserInfo'] = true
@@ -23,7 +23,7 @@ class GetUserInfo extends Plugin {
     this._getUserInfo(users)
   }
   public async loop({ cstMin, cstHour, users }: { cstMin: number, cstHour: number, users: Map<string, User> }) {
-    if (cstMin === 0 && cstHour % 4 === 0) this._getUserInfo(users) // 每4h查询个人信息
+    if (cstMin === 0 && cstHour % 8 === 0) this._getUserInfo(users) // 每8h查询个人信息
   }
   /**
    * 用户信息
@@ -123,9 +123,12 @@ class GetUserInfo extends Plugin {
   private _logMSGHandler(rawMsg: any) {
     let logMsg: string = ''
     for (const uid in rawMsg) {
-      let line, live, medal, bag, ban: string = ''
+      let line, live, medal, bag, ban, vip: string = ''
       let user = rawMsg[uid]
       user.ban ? ban = '已封禁' : ban = '未封禁'
+      if (user.vip === 0) vip = '不是老爷'
+      else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
+      else if (user.svip === 1) vip = '年费老爷'
       line = `/******************************用户 ${user.nickname} 信息******************************/`
       live = function() {
         if (user.liveData === false) return (`用户信息获取失败`)
@@ -134,7 +137,7 @@ class GetUserInfo extends Plugin {
 EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} \
 (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%)  \
 排名：${user.liveData.user_level_rank}\n金瓜子：${user.liveData.gold}  \
-银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${ban}`)
+银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${ban}  ${vip}`)
         }
       }()
       medal = function() {
@@ -179,14 +182,17 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
   private _pushMSGHandler(rawMsg: any) {
     let pushMsg: string = ''
     for (const uid in rawMsg) {
-      let line, live, medal, bag, ban: string = ''
+      let line, live, medal, bag, ban, vip: string = ''
       let user = rawMsg[uid]
       user.ban ? ban = '已封禁' : ban = '未封禁'
-      line = `# 用户 **${user.nickname}** 信息`
+      if (user.vip === 0) vip = '不是老爷'
+      else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
+      else if (user.svip === 1) vip = '年费老爷'
+      line = `# 用户 *****${user.nickname}***** 信息`
       live = function() {
         if (user.liveData === false) return (`## 用户信息获取失败\n`)
         else {
-          return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  当前状态：${ban}\n
+          return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  ${vip}  当前状态：${ban}\n
 - EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%) \
 排名：${user.liveData.user_level_rank}\n- 金瓜子：${user.liveData.gold}  银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}\n`)
         }
@@ -243,6 +249,8 @@ interface userInfoData {
   user_next_intimacy: number
   user_level_rank: number
   billCoin: number
+  vip: number
+  svip: number
 }
 /**
  * 勋章信息

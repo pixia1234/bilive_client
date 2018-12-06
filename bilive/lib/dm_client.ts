@@ -289,8 +289,8 @@ class DMclient extends EventEmitter {
    * @protected
    * @memberof DMclient
    */
-   protected _ClientConnectHandler() {
-     let data: string
+  protected _ClientConnectHandler() {
+    let data: string
     if (this._protocol === 'socket')
       data = JSON.stringify({ roomid: this.roomID, uid: this.userID, from: 0, platform: 'android', clientver: '5.34.1.5341000', hwid: AppClient.DeviceID, protover: 2 })
     else if (this._protocol === 'flash')
@@ -298,7 +298,7 @@ class DMclient extends EventEmitter {
     else data = JSON.stringify({ uid: this.userID, roomid: this.roomID, protover: 1, platform: 'web', clientver: '1.4.7' })
     this._Timer = setTimeout(() => this._ClientHeart(), 30 * 1000)
     this._ClientSendData(16 + data.length, 16, this.version, 7, this.driver, data)
-   }
+  }
   /**
    * 心跳包
    *

@@ -7,7 +7,7 @@ class MainSite extends Plugin {
   }
   public name = '主站功能'
   public description = '每天自动做主站功能（观看、分享、投币）'
-  public version = '0.0.2'
+  public version = '0.0.3'
   public author = 'Vector000'
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 自动签到
@@ -70,7 +70,7 @@ class MainSite extends Plugin {
     let aids: number[] = []
     for (let mid of mids) {
       const summitVideo: requestOptions = {
-        uri: `https://space.bilibili.com/ajax/member/getSubmitVideos?mid=${mid}&pagesize=100&tid=0`,
+        uri: `https://space.bilibili.com/ajax/member/getSubmitVideos?mid=${mid}&pagesize=50&tid=0`,
         json: true
       }
       const getSummitVideo = await tools.XHR<getSummitVideo>(summitVideo)
@@ -135,7 +135,7 @@ class MainSite extends Plugin {
    * @memberof MainSite
    */
   private async _mainSiteWatch(user: User, aid: number, cid: number) {
-    let ts = new Date().getTime()
+    let ts = Date.now()
     const heart: requestOptions = {
       method: 'POST',
       uri: `https://api.bilibili.com/x/report/web/heartbeat`,
@@ -158,7 +158,7 @@ class MainSite extends Plugin {
    * @memberof MainSite
    */
   private async _mainSiteShare(user: User, aid: number) {
-    let ts = new Date().getTime()
+    let ts = Date.now()
     const share: requestOptions = {
       method: 'POST',
       uri: `https://app.bilibili.com/x/v2/view/share/add`,

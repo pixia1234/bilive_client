@@ -46,7 +46,7 @@ class TreasureBox extends Plugin {
    */
   private _treasureBox(users: Map<string, User>) {
     users.forEach((user, uid) => {
-      if (user.userData.ban && new Date().getTime() - user.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
+      if (user.userData.ban && Date.now() - user.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
       this._treasureBoxUser(uid, user)
     })
   }
@@ -92,7 +92,7 @@ class TreasureBox extends Plugin {
           tools.sendSCMSG(`${user.nickname} 已被封禁`)
           user.userData.ban = true
         }
-        user.userData.banTime = new Date().getTime()
+        user.userData.banTime = Date.now()
         tools.Log(user.nickname, '宝箱道具', currentTask.body.msg)
       }
       else tools.Log(user.nickname, '宝箱道具', currentTask.body)
