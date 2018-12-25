@@ -8,7 +8,6 @@
   "config": {
     "defaultUserID": 0,
     "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
-    "listenNumber": 3,
     "eventRooms": [
       3
     ],
@@ -23,13 +22,7 @@
     "accessToken": "",
     "refreshToken": "",
     "cookie": "",
-    "status": false,
-    "ban": false,
-    "banTime": 0,
-    "lastHeartTime": 0,
-    "exp_taken": 0,
-    "gift_taken": 0,
-    "int_taken": 0
+    "status": false
   },
   "info": {
     "defaultUserID": {
@@ -41,11 +34,6 @@
       "description": "监听服务器",
       "tip": "用来监听房间抽奖消息, 格式为server#protocol",
       "type": "string"
-    },
-    "listenNumber": {
-      "description": "各分区监听房间数",
-      "tip": "四个分区分别监听的房间数，默认为3，网络环境好的可以适当增加（上限10）",
-      "type": "number"
     },
     "eventRooms": {
       "description": "挂机活动房间以,分隔",

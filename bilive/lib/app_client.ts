@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import crypto from 'crypto'
 import request from 'request'
 import tools from './tools'
@@ -19,15 +18,13 @@ enum appStatus {
  *
  * @class AppClient
  */
-class AppClient extends EventEmitter {
+class AppClient {
   /**
    * Creates an instance of AppClient.
    * 创建实例后务必init()
    * @memberof AppClient
    */
-  constructor() {
-    super()
-  }
+  constructor() { }
   public static readonly actionKey: string = 'appkey'
   public static readonly platform: string = 'android'
   // bilibili 客户端

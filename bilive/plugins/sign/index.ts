@@ -55,7 +55,6 @@ class Sign extends Plugin {
         if (signInfo.body.code === 0 || signInfo.body.code === -500) {
           this._signList.set(uid, true)
           tools.Log(user.nickname, '自动签到', '已签到')
-          if (signInfo.body.code === 0) user.userData.exp_taken += 3000
         }
         else tools.Log(user.nickname, '自动签到', signInfo.body)
       }

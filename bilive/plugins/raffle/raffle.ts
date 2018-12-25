@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events'
 import { Options as requestOptions } from 'request'
 import { tools, AppClient } from '../../plugin'
 import Options from '../../options'
@@ -7,13 +8,14 @@ import Options from '../../options'
  *
  * @class Raffle
  */
-class Raffle {
+class Raffle extends EventEmitter {
   /**
    * 创建一个 Raffle 实例
    * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
    * @memberof Raffle
    */
   constructor(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage, user: User) {
+    super()
     this._raffleMessage = raffleMessage
     this._user = user
   }
@@ -52,7 +54,7 @@ class Raffle {
       await tools.XHR({
         method: 'POST',
         uri: `https://api.live.bilibili.com/room/v1/Room/room_entry_action`,
-        body:  `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
+        body: `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
         jar: this._user.jar,
         json: true,
         headers: { 'Referer': `https://live.bilibili.com/${tools.getShortRoomID(roomID)}` }
@@ -96,7 +98,7 @@ class Raffle {
    * @memberof Raffle
    */
   private async _RaffleAward() {
-    const { id, roomID, title, type } = this._raffleMessage
+    const { cmd, id, roomID, title, type } = this._raffleMessage
     const reward: requestOptions = {
       method: 'POST',
       uri: `${this._url}/getAward`,
@@ -106,31 +108,30 @@ class Raffle {
     }
     tools.XHR<raffleAward>(reward, 'Android').then(raffleAward => {
       if (raffleAward !== undefined && raffleAward.response.statusCode === 200) {
+        this.emit('msg', {
+          cmd: 'join',
+          data: { uid: this._user.uid, type: cmd }
+        })
         if (raffleAward.body.code === 0) {
-          if (this._user.userData.ban === true) {
-            tools.sendSCMSG(`${this._user.nickname} 已解除封禁`)
-            this._user.userData.ban = false
-            this._user.userData.banTime = 0
-          }
           const gift = raffleAward.body.data
           if (gift.gift_num === 0) tools.Log(this._user.nickname, title, id, raffleAward.body.msg)
           else {
             const msg = `${this._user.nickname} ${title} ${id} 获得 ${gift.gift_num} 个${gift.gift_name}`
+            this.emit('msg', {
+              cmd: 'earn',
+              data: { uid: this._user.uid, type: cmd, name: gift.gift_name, num: gift.gift_num }
+            })
             tools.Log(msg)
-            if (gift.gift_name === '辣条') this._user.userData.gift_taken += (gift.gift_num * 100)
-            else if (gift.gift_name === '银瓜子') this._user.userData.gift_taken += gift.gift_num
             if (gift.gift_name.includes('小电视')) tools.sendSCMSG(msg)
           }
         }
         else tools.Log(this._user.nickname, title, id, raffleAward.body)
         if (raffleAward.body.code === 400 && raffleAward.body.msg === '访问被拒绝') {
-          if (this._user.userData.ban === false) {
-            tools.sendSCMSG(`${this._user.nickname} 已被封禁`)
-            this._user.userData.ban = true
-          }
-          this._user.userData.banTime = Date.now()
+          this.emit('msg', {
+            cmd: 'ban',
+            data: { uid: this._user.uid, nickname: this._user.nickname }
+          })
         }
-        Options.save()
       }
     })
   }
@@ -151,26 +152,30 @@ class Raffle {
     }
     tools.XHR<lotteryReward>(reward, 'Android').then(lotteryReward => {
       if (lotteryReward !== undefined && lotteryReward.response.statusCode === 200) {
+        this.emit('msg', {
+          cmd: 'join',
+          data: { uid: this._user.uid, type: 'lottery' }
+        })
         if (lotteryReward.body.code === 0) {
-          if (this._user.userData.ban === true) {
-            tools.sendSCMSG(`${this._user.nickname} 已解除封禁`)
-            this._user.userData.ban = false
-            this._user.userData.banTime = 0
-          }
           tools.Log(this._user.nickname, title, id, lotteryReward.body.data.message)
           let award_type = lotteryReward.body.data.award_type
-          let intimacy = (award_type === 0 ? 20 : (award_type === 1 ? 5 : 1))
-          this._user.userData.int_taken += intimacy
+          this.emit('msg', {
+            cmd: 'earn',
+            data: {
+              uid: this._user.uid,
+              type: 'lottery',
+              name: '亲密度',
+              num: (award_type === 0 ? 20 : (award_type === 1 ? 5 : 1))
+            }
+          })
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
         if (lotteryReward.body.code === 400 && lotteryReward.body.msg === '访问被拒绝') {
-          if (this._user.userData.ban === false) {
-            tools.sendSCMSG(`${this._user.nickname} 已被封禁`)
-            this._user.userData.ban = true
-          }
-          this._user.userData.banTime = Date.now()
+          this.emit('msg', {
+            cmd: 'ban',
+            data: { uid: this._user.uid, nickname: this._user.nickname }
+          })
         }
-        Options.save()
       }
     })
   }
@@ -189,16 +194,31 @@ class Raffle {
       json: true,
       headers: this._user.headers
     }
-    tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
-      if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
-        const content = joinStorm.body.data
-        if (content !== undefined && content.gift_num > 0) {
-          tools.Log(this._user.nickname, title, id, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
-          this._user.userData.gift_taken += (content.gift_num * 1000)
+    let joinStatus: boolean = false
+    for (let i = 0; i < (<number>Options._.config.stormSend); i++) {
+      tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
+        if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
+          if (!joinStatus) {
+            this.emit('msg', {
+              cmd: 'join',
+              data: { uid: this._user.uid, type: 'beatStorm' }
+            })
+            joinStatus = true
+          }
+          const content = joinStorm.body.data
+          if (content !== undefined && content.gift_num > 0) {
+            tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
+            this.emit('msg', {
+              cmd: 'earn',
+              data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
+            })
+            i = <number>Options._.config.stormSend
+          }
+          else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
-        else tools.Log(this._user.nickname, title, id, joinStorm.body.msg)
-      }
-    })
+      })
+      await tools.Sleep(Math.floor(20000 / (<number>Options._.config.stormSend)))
+    }
   }
 }
 /**

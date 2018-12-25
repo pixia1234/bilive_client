@@ -1,6 +1,5 @@
 import { Options as requestOptions } from 'request'
 import Plugin, { tools, AppClient } from '../../plugin'
-import Options from '../../options'
 
 class TreasureBox extends Plugin {
   constructor() {
@@ -46,7 +45,6 @@ class TreasureBox extends Plugin {
    */
   private _treasureBox(users: Map<string, User>) {
     users.forEach((user, uid) => {
-      if (user.userData.ban && Date.now() - user.userData.banTime < 12 * 60 * 60 * 1000) return // 12h
       this._treasureBoxUser(uid, user)
     })
   }
@@ -69,11 +67,6 @@ class TreasureBox extends Plugin {
     const currentTask = await tools.XHR<currentTask>(current, 'Android')
     if (currentTask !== undefined && currentTask.response.statusCode === 200) {
       if (currentTask.body.code === 0) {
-        if (user.userData.ban === true) {
-          tools.sendSCMSG(`${user.nickname} 已解除封禁`)
-          user.userData.ban = false
-          user.userData.banTime = 0
-        }
         await tools.Sleep(currentTask.body.data.minute * 60 * 1000)
         const award: requestOptions = {
           uri: `https://api.live.bilibili.com/mobile/freeSilverAward?${AppClient.signQueryBase(user.tokenQuery)}`,
@@ -87,16 +80,7 @@ class TreasureBox extends Plugin {
         this._treasureBoxList.set(uid, true)
         tools.Log(user.nickname, '宝箱道具', '已领取所有宝箱')
       }
-      else if (currentTask.body.code === 400 && currentTask.body.msg === '访问被拒绝') {
-        if (user.userData.ban === false) {
-          tools.sendSCMSG(`${user.nickname} 已被封禁`)
-          user.userData.ban = true
-        }
-        user.userData.banTime = Date.now()
-        tools.Log(user.nickname, '宝箱道具', currentTask.body.msg)
-      }
       else tools.Log(user.nickname, '宝箱道具', currentTask.body)
-      Options.save()
     }
     else tools.Log(user.nickname, '宝箱道具', '网络错误')
   }

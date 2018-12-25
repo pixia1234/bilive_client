@@ -74,20 +74,7 @@ class Options extends EventEmitter {
     'accessToken',
     'refreshToken',
     'cookie',
-    'status',
-    'ban',
-    'banTime',
-    'lastHeartTime',
-    'exp_taken',
-    'gift_taken',
-    'int_taken',
-    'doSign',
-    'treasureBox',
-    'eventRoom',
-    'silver2coin',
-    'sendGift',
-    'sendGiftRoom',
-    'signGroup'
+    'status'
   ])
   /**
    *文件真实路径
@@ -123,7 +110,7 @@ class Options extends EventEmitter {
    * @memberof Options
    */
   public async save() {
-    // const blacklist = ['newUserData', 'info', 'apiIPs', 'roomList']
+    // const blacklist = ['newUserData', 'info', 'roomList']
     const error = await FSwriteFile(this._dirname + '/options/options.json'
       , JSON.stringify(this._, (key, value) => (key.match(/^\d*$/) !== null || this.whiteList.has(key)) ? value : undefined, 2))
     if (error !== undefined) console.error(`${new Date().toString().slice(4, 24)} :`, error)

@@ -148,7 +148,6 @@ class Online extends AppClient {
       headers: this.headers
     }, 'Android')
     if (heart !== undefined && heart.response.statusCode === 200 && heart.body.code === 3) return 'tokenError'
-    this.emit('heartBeat', this.uid)
   }
   /**
    * cookie失效

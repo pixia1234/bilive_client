@@ -55,8 +55,9 @@ class MainSite extends Plugin {
       headers: { "Host": "api.bilibili.com" }
     }
     const getAttentions = await tools.XHR<attentions>(attentions)
-    if (getAttentions !== undefined && getAttentions.body.data.list.length > 0)
-      getAttentions.body.data.list.forEach(item => mids.push(item.mid))
+    if (getAttentions === undefined) return
+    if (getAttentions.response.statusCode !== 200) return tools.Log(getAttentions)
+    if (getAttentions.body.data.list.length > 0) getAttentions.body.data.list.forEach(item => mids.push(item.mid))
     if ((<number[]>user.userData.mainCoinGroup).length > 0) mids = <number[]>user.userData.mainCoinGroup
     return mids
   }
@@ -74,7 +75,8 @@ class MainSite extends Plugin {
         json: true
       }
       const getSummitVideo = await tools.XHR<getSummitVideo>(summitVideo)
-      if (getSummitVideo !== undefined) getSummitVideo.body.data.vlist.forEach(item => { aids.push(item.aid) })
+      if (getSummitVideo === undefined || getSummitVideo.response.statusCode !== 200) continue
+      else getSummitVideo.body.data.vlist.forEach(item => { aids.push(item.aid) })
       await tools.Sleep(3 * 1000)
     }
     return aids
@@ -106,10 +108,13 @@ class MainSite extends Plugin {
     users.forEach(async (user) => {
       if (!user.userData['main']) return
       let mids = await this._getAttentionList(user)
+      if (mids === undefined) return tools.Log(user.nickname, `获取关注列表失败`)
+      if (mids.length === 0) return tools.Log(user.nickname, `关注列表空空的哦，去关注几个up主吧~`)
       let aids = await this._getVideoList(mids)
       if (aids.length === 0) return tools.Log(user.nickname, `视频列表空空的哦，去关注几个up主吧~`)
       let aid: number = aids[Math.floor(Math.random() * (aids.length))]
       let cid: number = <number>(await this._getCid(aid))
+      if (cid === undefined) return tools.Log(user.nickname, `获取cid失败`)
       const reward: requestOptions = {
         uri: `https://account.bilibili.com/home/reward`,
         jar: user.jar,

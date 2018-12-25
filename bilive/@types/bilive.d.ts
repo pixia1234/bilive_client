@@ -13,7 +13,6 @@ interface options {
   user: userCollection
   newUserData: userData
   info: optionsInfo
-  apiIPs: string[]
   roomList: [number, number][]
 }
 interface server {
@@ -27,7 +26,6 @@ interface config {
   [index: string]: number | string | number[]
   defaultUserID: number
   serverURL: string
-  listenNumber: number
   eventRooms: number[]
   adminServerChan: string
 }
@@ -44,12 +42,6 @@ interface userData {
   refreshToken: string
   cookie: string
   status: boolean
-  ban: boolean
-  banTime: number
-  lastHeartTime: number
-  exp_taken: number
-  gift_taken: number
-  int_taken: number
 }
 interface optionsInfo {
   [index: string]: configInfoData
@@ -480,7 +472,8 @@ type Options = import('../options').__Options
 /*******************
  ****** plugin *****
  *******************/
-interface IPlugin {
+type EPlugin = import('events')
+interface IPlugin extends EPlugin {
   name: string
   description: string
   version: string
@@ -490,158 +483,9 @@ interface IPlugin {
   start?({ options, users }: { options: options, users: Map<string, User> }): Promise<void>
   loop?({ cst, cstMin, cstHour, cstString, options, users }: { cst: Date, cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }): Promise<void>
   msg?({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
-  noti?({ cmd, msg, users }: { cmd: string, msg: string | number, users: Map<string, User> }): Promise<void>
+  notify?({ msg, options, users }: { msg: pluginNotify | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
 }
-/**
- * 个人信息
- *
- * @interface userInfo
- */
-interface userInfo {
-  code: string
-  msg: string
-  data: userInfoData
-}
-interface userInfoData {
-  uname: string
-  silver: number
-  gold: number
-  user_level: number
-  user_intimacy: number
-  user_next_intimacy: number
-  user_level_rank: number
-  billCoin: number
-}
-/**
- * 勋章信息
- *
- * @interface medalInfo
- */
-interface medalInfo {
-  code: number
-  msg: string
-  data: medalInfoData
-}
-interface medalInfoData {
-  medalCount: number
-  count: number
-  fansMedalList: medalInfoDataInfo[]
-}
-interface medalInfoDataInfo {
-  status: number
-  level: number
-  intimacy: number
-  next_intimacy: number
-  medal_name: string
-  rank: number
-  target_id: number
-  uid: number
-}
-/**
- * 主站关注
- *
- * @interface attentions
- */
-interface attentions {
-  code: number
-  data: attentionsData
-  message: string
-  ttl: number
-}
-interface attentionsData {
-  list: attentionsDataList[]
-  reversion: number
-  total: number
-}
-interface attentionsDataList {
-  mid: number
-  mtime: number
-  uname: string
-}
-/**
- * 主站视频
- *
- * @interface getSummitVideo
- */
-interface getSummitVideo {
-  status: boolean
-  data: getSummitVideoData
-}
-interface getSummitVideoData {
-  count: number
-  pages: number
-  vlist: getSummitVideoDataList[]
-}
-interface getSummitVideoDataList {
-  aid: number
-  created: number
-  mid: number
-  title: string
-}
-/**
- * 主站cid
- *
- * @interface getCid
- */
-interface getCid {
-  data: cid[]
-}
-interface cid {
-  cid: number
-}
-/**
- * 主站分享返回
- *
- * @interface shareAV
- */
-interface shareAV {
-  code: number
-}
-/**
- * 主站心跳
- *
- * @interface avHeart
- */
-interface avHeart {
-  code: number
-}
-/**
- * 主站心跳
- *
- * @interface avHeart
- */
-interface avHeart {
-  code: number
-}
-/**
- * 主站信息
- *
- * @interface mainUserInfo
- */
-interface mainUserInfo {
-  code: number
-  data: mainUserInfoData
-}
-interface mainUserInfoData {
-  coins: number
-}
-/**
- * 主站任务
- *
- * @interface mainReward
- */
-interface mainReward {
-  code: number
-  data: mainRewardData
-}
-interface mainRewardData {
-  coins_av: number
-}
-/**
- * 投币回调
- *
- * @interface coinAdd
- */
-interface coinAdd {
-  code: number
+interface pluginNotify {
+  cmd: string
+  data: any
 }

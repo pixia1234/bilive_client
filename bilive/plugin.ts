@@ -1,6 +1,7 @@
+import { EventEmitter } from 'events'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
-class Plugin implements IPlugin {
+class Plugin extends EventEmitter implements IPlugin {
   /**
    * 插件名
    *
