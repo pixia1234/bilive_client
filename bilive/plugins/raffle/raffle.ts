@@ -218,7 +218,7 @@ class Raffle extends EventEmitter {
           else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
       })
-      await tools.Sleep((<number[]>Options._.config.stormSend)[0] * 1000)
+      await tools.Sleep((<number[]>Options._.config.stormSend)[0])
     }
   }
 }
