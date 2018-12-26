@@ -195,7 +195,8 @@ class Raffle extends EventEmitter {
       headers: this._user.headers
     }
     let joinStatus: boolean = false
-    for (let i = 0; i < (<number>Options._.config.stormSend); i++) {
+    if (<number[]>Options._.config.stormSend === undefined) return
+    for (let i = 0; i < (<number[]>Options._.config.stormSend)[1]; i++) {
       tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
         if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
           if (!joinStatus) {
@@ -217,7 +218,7 @@ class Raffle extends EventEmitter {
           else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
       })
-      await tools.Sleep(Math.floor(20000 / (<number>Options._.config.stormSend)))
+      await tools.Sleep((<number[]>Options._.config.stormSend)[0] * 1000)
     }
   }
 }
