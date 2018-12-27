@@ -186,17 +186,17 @@ class Raffle extends EventEmitter {
    * @memberof Raffle
    */
   private async _BeatStorm() {
-    const { id, title } = this._raffleMessage
+    const { id, roomID, title } = this._raffleMessage
     const join: requestOptions = {
       method: 'POST',
       uri: `${this._url}/join`,
-      body: AppClient.signQuery(`${this._user.tokenQuery}&${AppClient.baseQuery}&id=${id}`),
+      body: AppClient.signQuery(`${this._user.tokenQuery}&${AppClient.baseQuery}&id=${id}&roomid=${roomID}`),
       json: true,
       headers: this._user.headers
     }
     let joinStatus: boolean = false
-    if (<number[]>Options._.config.stormSend === undefined) return
-    for (let i = 0; i < (<number[]>Options._.config.stormSend)[1]; i++) {
+    if (<number[]>Options._.config.stormSetting === undefined) return
+    for (let i = 0; i < (<number[]>Options._.config.stormSetting)[1]; i++) {
       tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
         if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
           if (!joinStatus) {
@@ -213,12 +213,12 @@ class Raffle extends EventEmitter {
               cmd: 'earn',
               data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
             })
-            i = <number>Options._.config.stormSend
+            i = <number>Options._.config.stormSetting
           }
           else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
       })
-      await tools.Sleep((<number[]>Options._.config.stormSend)[0])
+      await tools.Sleep((<number[]>Options._.config.stormSetting)[0])
     }
   }
 }

@@ -42,13 +42,13 @@ class Raffle extends Plugin {
     }
     whiteList.add('droprate')
     // 节奏发包次数
-    defaultOptions.config['stormSend'] = [1000, 5]
-    defaultOptions.info['stormSend'] = {
-      description: '节奏发包',
-      tip: '全局设置，由两个参数组成，以\",\"分隔，前一个参数为发包间隔(ms)，后一个参数为发包次数',
+    defaultOptions.config['stormSetting'] = [1000, 5]
+    defaultOptions.info['stormSetting'] = {
+      description: '节奏设置',
+      tip: '节奏风暴的相关设置，以\",\"分隔，第一个参数为发包间隔(ms)，第二个参数为发包次数',
       type: 'numberArray'
     }
-    whiteList.add('stormSend')
+    whiteList.add('stormSetting')
     // 小电视抽奖
     defaultOptions.newUserData['smallTV'] = false
     defaultOptions.info['smallTV'] = {
