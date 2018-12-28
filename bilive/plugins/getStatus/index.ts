@@ -17,10 +17,20 @@ class GetStatus extends Plugin {
     lottery: 0,
     beatStorm: 0
   }
+  // 监听状态(Daily, 只统计当前0点开始的监听量)
+  private todayListenStatus: any = {
+    startTime: 0,
+    smallTV: 0,
+    raffle: 0,
+    lottery: 0,
+    beatStorm: 0
+  }
   // 封禁列表
   private _banList: Map<string, boolean> = new Map()
   // 抽奖统计
   private _raffleStatus: any = {}
+  // 抽奖统计(Daily, 只统计当前0点开始的获奖量)
+  private _todayRaffleStatus: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     defaultOptions.config['getStatus'] = 4
     defaultOptions.info['getStatus'] = {
@@ -32,28 +42,26 @@ class GetStatus extends Plugin {
     this.loaded = true
   }
   public async start({ users }: { users: Map<string, User> }) {
-    users.forEach(user => {
-      this._raffleStatus[user.uid] = {
-        earned: [],
-        joined: {
-          smallTV: 0,
-          raffle: 0,
-          lottery: 0,
-          beatStorm: 0
-        }
-      }
-      this._banList.set(user.uid, false)
-    })
+    this.clearStatus(this._raffleStatus, users)
+    this.clearStatus(this._todayRaffleStatus, users)
+    this._banList.clear()
     this.listenStatus.startTime = Date.now()
     this._getStatus(users)
   }
-  public async loop({ cstMin, cstHour, options, users }: { cstMin: number, cstHour: number, options: options, users: Map<string, User> }) {
+  public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
     let time = <number>options.config.getStatus
     if (cstMin === 0 && cstHour % time === 0) this._getStatus(users)
     if (cstMin === 0 && cstHour % 12 === 0)  this._banList.clear()
+    if (cstString === '00:00') {
+      this.clearStatus(this._todayRaffleStatus, users)
+      for (let key in this.todayListenStatus) {
+        this.todayListenStatus[key] = 0
+      }
+    }
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
+    this.todayListenStatus[message.cmd]++
   }
   public async notify({ msg }: { msg: pluginNotify }) {
     let data = msg.data
@@ -76,8 +84,35 @@ class GetStatus extends Plugin {
           break
         }
       }
+      let dlen = this._todayRaffleStatus[data.uid].earned.length
+      for (let i = 0; i <= dlen; i++) {
+        if (i === dlen) {
+          this._todayRaffleStatus[data.uid].earned.push({ name: data.name, num: data.num })
+          break
+        }
+        if (data.name === this._todayRaffleStatus[data.uid].earned[i].name) {
+          this._todayRaffleStatus[data.uid].earned[i].num += data.num
+          break
+        }
+      }
     }
-    if (msg.cmd === 'join') this._raffleStatus[data.uid].joined[data.type]++
+    if (msg.cmd === 'join') {
+      this._raffleStatus[data.uid].joined[data.type]++
+      this._todayRaffleStatus[data.uid].joined[data.type]++
+    }
+  }
+  private async clearStatus(status: any, users: Map<string, User>) {
+    users.forEach(user => {
+      status[user.uid] = {
+        earned: [],
+        joined: {
+          smallTV: 0,
+          raffle: 0,
+          lottery: 0,
+          beatStorm: 0
+        }
+      }
+    })
   }
   /**
    * 用户信息
@@ -97,8 +132,7 @@ class GetStatus extends Plugin {
       tmp['liveData'] = await this._getLiveInfo(user)
       tmp['medalData'] = await this._getMedalInfo(user)
       tmp['bagData'] = await this._getBagInfo(user)
-      tmp['joinData'] = await this._getJoinInfo(user)
-      tmp['earnData'] = await this._getEarnInfo(user)
+      tmp['raffleData'] = await this._getRaffleInfo(user)
       rawMsg[uid] = tmp
     }
     this._logMSGHandler(rawMsg)
@@ -173,26 +207,25 @@ class GetStatus extends Plugin {
     return result
   }
   /**
-   * 获取joinInfo
+   * 获取raffleInfo
    *
    * @memberof GetStatus
    */
-  private async _getJoinInfo(user: User) {
-    let result: any = {}
-    let userRaffleData = this._raffleStatus[user.uid]
-    result = userRaffleData.joined
-    return result
-  }
-  /**
-   * 获取earnInfo
-   *
-   * @memberof GetStatus
-   */
-  private async _getEarnInfo(user: User) {
-    let result: any = []
-    let userRaffleData = this._raffleStatus[user.uid]
-    if (userRaffleData === undefined) result = []
-    else result = userRaffleData['earned']
+  private async _getRaffleInfo(user: User) {
+    let result: any = {
+      joinData: {
+        total: {},
+        today: {}
+      },
+      earnData: {
+        total: {},
+        today: {}
+      }
+    }
+    result.joinData.total = this._raffleStatus[user.uid].joined
+    result.joinData.today = this._todayRaffleStatus[user.uid].joined
+    result.earnData.total = this._raffleStatus[user.uid].earned
+    result.earnData.today = this._todayRaffleStatus[user.uid].earned
     return result
   }
   /**
@@ -206,10 +239,10 @@ class GetStatus extends Plugin {
     let startTime = new Date()
     startTime.setTime(this.listenStatus.startTime)
     let timeLine: string = `本次挂机开始于 ${startTime}`
-    let smallTVLine: string = `共监听到小电视抽奖数：${this.listenStatus.smallTV}`
-    let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}`
-    let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}`
-    let beatStormLine: string = `共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}`
+    let smallTVLine: string = `共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})`
+    let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})`
+    let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})`
+    let beatStormLine: string = `共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})`
     logMsg += headLine + '\n' + timeLine + '\n' + smallTVLine + '\n' + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle, ban, vip: string = ''
@@ -261,12 +294,14 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       raffle = function() {
         let tmp: string = '\n本次挂机，此账号共参与抽奖：\n'
-        tmp += `smallTV抽奖：${user.joinData.smallTV}\n`
-        tmp += `raffle抽奖：${user.joinData.raffle}\n`
-        tmp += `lottery抽奖：${user.joinData.lottery}\n`
-        tmp += `beatStorm抽奖：${user.joinData.beatStorm}\n`
+        tmp += `smallTV抽奖：${user.raffleData.joinData.total.smallTV}(${user.raffleData.joinData.today.smallTV})\n`
+        tmp += `raffle抽奖：${user.raffleData.joinData.total.raffle}(${user.raffleData.joinData.today.raffle})\n`
+        tmp += `lottery抽奖：${user.raffleData.joinData.total.lottery}(${user.raffleData.joinData.today.lottery})\n`
+        tmp += `beatStorm抽奖：${user.raffleData.joinData.total.beatStorm}(${user.raffleData.joinData.today.beatStorm})\n`
         tmp += `共获得奖励：\n`
-        user.earnData.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        user.raffleData.earnData.total.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        tmp += `今日收益：\n`
+        user.raffleData.earnData.today.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
         return tmp
       }()
       logMsg += '\n' + line + '\n' + live + '\n' + medal + '\n' + bag + '\n' + raffle + '\n'
@@ -284,10 +319,10 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     let startTime = new Date()
     startTime.setTime(this.listenStatus.startTime)
     pushMsg += `- 本次挂机开始于 ${startTime}\n`
-    pushMsg += `- 共监听到小电视抽奖数：${this.listenStatus.smallTV}\n`
-    pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}\n`
-    pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}\n`
-    pushMsg += `- 共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}\n`
+    pushMsg += `- 共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})\n`
+    pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})\n`
+    pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})\n`
+    pushMsg += `- 共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})\n`
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle, ban, vip: string = ''
       let user = rawMsg[uid]
@@ -333,12 +368,14 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       raffle = function() {
         let tmp: string = '## 抽奖情况\n'
-        tmp += `- smallTV抽奖：${user.joinData.smallTV}\n`
-        tmp += `- raffle抽奖：${user.joinData.raffle}\n`
-        tmp += `- lottery抽奖：${user.joinData.lottery}\n`
-        tmp += `- beatStorm抽奖：${user.joinData.beatStorm}\n`
+        tmp += `- smallTV抽奖：${user.raffleData.joinData.total.smallTV}(${user.raffleData.joinData.today.smallTV})\n`
+        tmp += `- raffle抽奖：${user.raffleData.joinData.total.raffle}(${user.raffleData.joinData.today.raffle})\n`
+        tmp += `- lottery抽奖：${user.raffleData.joinData.total.lottery}(${user.raffleData.joinData.today.lottery})\n`
+        tmp += `- beatStorm抽奖：${user.raffleData.joinData.total.beatStorm}(${user.raffleData.joinData.today.beatStorm})\n`
         tmp += `### 共获得奖励：\n`
-        user.earnData.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        user.raffleData.earnData.total.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        tmp += `### 今日收益：\n`
+        user.raffleData.earnData.today.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
         return tmp
       }()
       pushMsg += '\n---\n' + line + '\n---\n' + live + '\n---\n' + medal + '\n---\n' + bag + '\n---\n' + raffle + '\n---\n'
