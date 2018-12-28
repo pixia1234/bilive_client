@@ -158,14 +158,14 @@ class Raffle extends EventEmitter {
         })
         if (lotteryReward.body.code === 0) {
           tools.Log(this._user.nickname, title, id, lotteryReward.body.data.message)
-          let award_type = lotteryReward.body.data.award_type
+          let type = lotteryReward.body.data.privilege_type
           this.emit('msg', {
             cmd: 'earn',
             data: {
               uid: this._user.uid,
               type: 'lottery',
               name: '亲密度',
-              num: (award_type === 0 ? 20 : (award_type === 1 ? 5 : 1))
+              num: (type === 1 ? 20 : (type === 2 ? 5 : 1))
             }
           })
         }
@@ -280,10 +280,12 @@ interface lotteryReward {
 interface lotteryRewardData {
   id: number
   type: string
-  award_type: number
+  award_id: string
+  award_type: 1 | 2
   time: number
   message: string
   from: string
+  privilege_type: 1 | 2 | 3
   award_list: lotteryRewardDataAwardlist[]
 }
 interface lotteryRewardDataAwardlist {
