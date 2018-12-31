@@ -283,9 +283,9 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
             let expireStr: string = ''
             let expire = user.bagData[i].expireat
             if (expire === 0) expireStr = `永久`
-            else if (expire / 3600 < 1) expireStr = `${Math.floor(expire / 60)}分钟`
-            else if (expire / (24 * 3600) < 1) expireStr = `${Math.floor(expire / 3600)}小时`
-            else expireStr = `${Math.floor(expire / 24 / 3600)}天`
+            else if (expire / 3600 < 1) expireStr = `${(expire / 60).toFixed(1)}分钟`
+            else if (expire / (24 * 3600) < 1) expireStr = `${(expire / 3600).toFixed(1)}小时`
+            else expireStr = `${(expire / 24 / 3600).toFixed(1)}天`
             tmp += `${giftItem.gift_name} x${giftItem.gift_num} (有效期${expireStr})    `
             if ((i + 1) % 3 === 0) tmp += '\n'
           }
@@ -358,9 +358,9 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
             let expireStr: string = ''
             let expire = user.bagData[i].expireat
             if (expire === 0) expireStr = `永久`
-            else if (expire / 3600 < 1) expireStr = `${Math.floor(expire / 60)}分钟`
-            else if (expire / (24 * 3600) < 1) expireStr = `${Math.floor(expire / 3600)}小时`
-            else expireStr = `${Math.floor(expire / 24 / 3600)}天`
+            else if (expire / 3600 < 1) expireStr = `${(expire / 60).toFixed(1)}分钟`
+            else if (expire / (24 * 3600) < 1) expireStr = `${(expire / 3600).toFixed(1)}小时`
+            else expireStr = `${(expire / 24 / 3600).toFixed(1)}天`
             tmp += `${giftItem.gift_name}|${giftItem.gift_num}|${expireStr}\n`
           }
           return (tmp)
