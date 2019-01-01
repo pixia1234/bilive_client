@@ -42,18 +42,18 @@ class GetStatus extends Plugin {
     this.loaded = true
   }
   public async start({ users }: { users: Map<string, User> }) {
-    this.clearStatus(this._raffleStatus, users)
-    this.clearStatus(this._todayRaffleStatus, users)
+    this._clearStatus(this._raffleStatus, users)
+    this._clearStatus(this._todayRaffleStatus, users)
     this._banList.clear()
     this.listenStatus.startTime = Date.now()
     this._getStatus(users)
   }
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
     let time = <number>options.config.getStatus
-    if (cstMin === 0 && cstHour % time === 0) this._getStatus(users)
+    if (cstMin === 30 && cstHour % time === 0) this._getStatus(users)
     if (cstMin === 0 && cstHour % 12 === 0)  this._banList.clear()
     if (cstString === '00:00') {
-      this.clearStatus(this._todayRaffleStatus, users)
+      this._clearStatus(this._todayRaffleStatus, users)
       for (let key in this.todayListenStatus) {
         this.todayListenStatus[key] = 0
       }
@@ -73,35 +73,21 @@ class GetStatus extends Plugin {
       }
     }
     if (msg.cmd === 'earn') {
-      let len = this._raffleStatus[data.uid].earned.length
-      for (let i = 0; i <= len; i++) {
-        if (i === len) {
-          this._raffleStatus[data.uid].earned.push({ name: data.name, num: data.num })
-          break
-        }
-        if (data.name === this._raffleStatus[data.uid].earned[i].name) {
-          this._raffleStatus[data.uid].earned[i].num += data.num
-          break
-        }
-      }
-      let dlen = this._todayRaffleStatus[data.uid].earned.length
-      for (let i = 0; i <= dlen; i++) {
-        if (i === dlen) {
-          this._todayRaffleStatus[data.uid].earned.push({ name: data.name, num: data.num })
-          break
-        }
-        if (data.name === this._todayRaffleStatus[data.uid].earned[i].name) {
-          this._todayRaffleStatus[data.uid].earned[i].num += data.num
-          break
-        }
-      }
+      this._addEarnStatus(this._raffleStatus, data.uid, msg.data)
+      this._addEarnStatus(this._todayRaffleStatus, data.uid, msg.data)
     }
     if (msg.cmd === 'join') {
       this._raffleStatus[data.uid].joined[data.type]++
       this._todayRaffleStatus[data.uid].joined[data.type]++
     }
   }
-  private async clearStatus(status: any, users: Map<string, User>) {
+  /**
+   * 清除状态缓存
+   *
+   * @private
+   * @memberof GetStatus
+   */
+  private async _clearStatus(status: any, users: Map<string, User>) {
     users.forEach(user => {
       status[user.uid] = {
         earned: [],
@@ -113,6 +99,25 @@ class GetStatus extends Plugin {
         }
       }
     })
+  }
+  /**
+   * 获取礼物数量+1
+   *
+   * @private
+   * @memberof GetStatus
+   */
+  private _addEarnStatus(status: any, uid: string, data: any) {
+    let len = status[uid].earned.length
+    for (let i = 0; i <= len; i++) {
+      if (i === len) {
+        status[uid].earned.push({ name: data.name, num: data.num })
+        break
+      }
+      if (data.name === status[uid].earned[i].name) {
+        status[uid].earned[i].num += data.num
+        break
+      }
+    }
   }
   /**
    * 用户信息

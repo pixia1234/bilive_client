@@ -26,7 +26,7 @@ class Raffle extends Plugin {
     }
     whiteList.add('raffleDelay')
     // 抽奖暂停
-    defaultOptions.config['rafflePause'] = [3, 9]
+    defaultOptions.config['rafflePause'] = []
     defaultOptions.info['rafflePause'] = {
       description: '抽奖暂停',
       tip: '在此时间段内不参与抽奖, 24时制, 以\",\"分隔, 只有一个时间时不启用',
@@ -90,10 +90,10 @@ class Raffle extends Plugin {
     }
     whiteList.add('lottery')
     // lottery限制
-    defaultOptions.newUserData['lotteryLimit'] = 5000
+    defaultOptions.newUserData['lotteryLimit'] = 2000
     defaultOptions.info['lotteryLimit'] = {
       description: 'lottery限制',
-      tip: '每日领取lottery类抽奖的限制，默认为5000',
+      tip: '每日领取lottery类抽奖的限制，默认为2000',
       type: 'number'
     }
     whiteList.add('lotteryLimit')
