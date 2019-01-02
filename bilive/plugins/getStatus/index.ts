@@ -51,7 +51,6 @@ class GetStatus extends Plugin {
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
     let time = <number>options.config.getStatus
     if (cstMin === 30 && cstHour % time === 0) this._getStatus(users)
-    if (cstMin === 0 && cstHour % 12 === 0)  this._banList.clear()
     if (cstString === '00:00') {
       this._clearStatus(this._todayRaffleStatus, users)
       for (let key in this.todayListenStatus) {
@@ -75,6 +74,11 @@ class GetStatus extends Plugin {
     if (msg.cmd === 'earn') {
       this._addEarnStatus(this._raffleStatus, data.uid, msg.data)
       this._addEarnStatus(this._todayRaffleStatus, data.uid, msg.data)
+      if (this._banList.get(data.uid)) {
+        this._banList.set(data.uid, false)
+        tools.Log(`${msg.data.nickname}已解除封禁`)
+        tools.sendSCMSG(`${msg.data.nickname}已解除封禁`)
+      }
     }
     if (msg.cmd === 'join') {
       this._raffleStatus[data.uid].joined[data.type]++
