@@ -119,7 +119,7 @@ class Raffle extends EventEmitter {
             const msg = `${this._user.nickname} ${title} ${id} 获得 ${gift.gift_num} 个${gift.gift_name}`
             this.emit('msg', {
               cmd: 'earn',
-              data: { uid: this._user.uid, type: cmd, name: gift.gift_name, num: gift.gift_num }
+              data: { uid: this._user.uid, nickname: this._user.nickname, type: cmd, name: gift.gift_name, num: gift.gift_num }
             })
             tools.Log(msg)
             if (gift.gift_name.includes('小电视')) tools.sendSCMSG(msg)
@@ -163,6 +163,7 @@ class Raffle extends EventEmitter {
             cmd: 'earn',
             data: {
               uid: this._user.uid,
+              nickname: this._user.nickname,
               type: 'lottery',
               name: '亲密度',
               num: (type === 1 ? 20 : (type === 2 ? 5 : 1))
@@ -202,7 +203,7 @@ class Raffle extends EventEmitter {
           if (!joinStatus) {
             this.emit('msg', {
               cmd: 'join',
-              data: { uid: this._user.uid, type: 'beatStorm' }
+              data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm' }
             })
             joinStatus = true
           }

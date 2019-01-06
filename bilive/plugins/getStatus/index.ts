@@ -67,8 +67,8 @@ class GetStatus extends Plugin {
     if (msg.cmd === 'ban') {
       if (!this._banList.get(data.uid)) {
         this._banList.set(data.uid, true)
-        tools.Log(`${msg.data.nickname}已被封禁`)
-        tools.sendSCMSG(`${msg.data.nickname}已被封禁`)
+        tools.Log(`${data.nickname}已被封禁`)
+        tools.sendSCMSG(`${data.nickname}已被封禁`)
       }
     }
     if (msg.cmd === 'earn') {
@@ -76,8 +76,8 @@ class GetStatus extends Plugin {
       this._addEarnStatus(this._todayRaffleStatus, data.uid, msg.data)
       if (this._banList.get(data.uid)) {
         this._banList.set(data.uid, false)
-        tools.Log(`${msg.data.nickname}已解除封禁`)
-        tools.sendSCMSG(`${msg.data.nickname}已解除封禁`)
+        tools.Log(`${data.nickname}已解除封禁`)
+        tools.sendSCMSG(`${data.nickname}已解除封禁`)
       }
     }
     if (msg.cmd === 'join') {
