@@ -67,7 +67,7 @@ class AutoSend extends Plugin {
           if (bagInfo.body.data.length > 0) {
             for (const giftData of bagInfo.body.data) {
               if (giftData.expireat > 0) {
-                let gift_value = 0, bag_value = 0, send_num = 0
+                let gift_value = 0
                 switch (giftData.gift_id) { // Gift_Config from http://api.live.bilibili.com/gift/v3/live/gift_config
                   case 1: gift_value = 1 //辣条
                     break
@@ -77,17 +77,14 @@ class AutoSend extends Plugin {
                     break
                   case 6: gift_value = 10 //亿圆
                     break
-                  case 9: gift_value = 4500 //爱心便当
+                  case 9: gift_value = 45 //爱心便当
                     break
-                  case 10: gift_value = 19900 //蓝白胖次
-                    break
-                  case 30054: gift_value = 5000 //粉丝卡，什么玩意儿
+                  case 10: gift_value = 199 //蓝白胖次
                     break
                   default: continue
                 }
-                bag_value = gift_value * giftData.gift_num
-                if (intimacy_needed >= bag_value) send_num = giftData.gift_num
-                else send_num = Math.floor(intimacy_needed / gift_value)
+                let send_num = Math.floor(intimacy_needed / gift_value)
+                if (send_num >= giftData.gift_num) send_num = giftData.gift_num
                 if (send_num > 0) {
                   const send: requestOptions = {
                     method: 'POST',
@@ -101,11 +98,11 @@ class AutoSend extends Plugin {
                   if (sendBag.body.code === 0) {
                     const sendBagData = sendBag.body.data
                     tools.Log(user.nickname, '自动送礼V2', `向房间 ${room_id} 赠送 ${send_num} 个${sendBagData.gift_name}`)
-                    intimacy_needed = intimacy_needed - send_num * gift_value
+                    intimacy_needed -= send_num * gift_value
                     if (intimacy_needed === 0) return tools.Log(user.nickname, `亲密度已达上限`)
                   }
                   else tools.Log(user.nickname, '自动送礼V2', `向房间 ${room_id} 赠送 ${send_num} 个${giftData.gift_name} 失败`, sendBag.body)
-                  await tools.Sleep(5000)
+                  await tools.Sleep(5 * 1000)
                 }
               }
             }
