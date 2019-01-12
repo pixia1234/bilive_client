@@ -483,7 +483,7 @@ interface IPlugin extends EPlugin {
   start?({ options, users }: { options: options, users: Map<string, User> }): Promise<void>
   loop?({ cst, cstMin, cstHour, cstString, options, users }: { cst: Date, cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }): Promise<void>
   msg?({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
-  notify?({ msg, options, users }: { msg: pluginNotify | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
+  notify?({ msg, options, users }: { msg: pluginNotify, options: options, users: Map<string, User> }): Promise<void>
 }
 interface pluginNotify {
   cmd: string

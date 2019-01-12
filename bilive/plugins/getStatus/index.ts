@@ -19,11 +19,28 @@ class GetStatus extends Plugin {
   }
   // 监听状态(Daily, 只统计当前0点开始的监听量)
   private todayListenStatus: any = {
-    startTime: 0,
     smallTV: 0,
     raffle: 0,
     lottery: 0,
     beatStorm: 0
+  }
+  // 监听遗漏统计
+  private listenMisses: any = {
+    raffleStart: 0,
+    lotteryStart: 0,
+    raffleEnd: 0,
+    lotteryEnd: 0,
+    raffleMissed: 0,
+    lotteryMissed: 0
+  }
+  // 监听遗漏统计(Daily, 只统计当前0点开始的监听量)
+  private todayListenMisses: any = {
+    raffleStart: 0,
+    lotteryStart: 0,
+    raffleEnd: 0,
+    lotteryEnd: 0,
+    raffleMissed: 0,
+    lotteryMissed: 0
   }
   // 封禁列表
   private _banList: Map<string, boolean> = new Map()
@@ -50,17 +67,21 @@ class GetStatus extends Plugin {
   }
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
     let time = <number>options.config.getStatus
-    if (cstMin === 30 && cstHour % time === 0) this._getStatus(users)
-    if (cstString === '00:00') {
+    if (cstMin === 0 && cstHour % time === 0) this._getStatus(users)
+    if (cstString === '01:00') {
       this._clearStatus(this._todayRaffleStatus, users)
       for (let key in this.todayListenStatus) {
         this.todayListenStatus[key] = 0
+      }
+      for (let key in this.todayListenMisses) {
+        this.todayListenMisses[key] = 0
       }
     }
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
     this.todayListenStatus[message.cmd]++
+    this.checkListenMisses(message)
   }
   public async notify({ msg }: { msg: pluginNotify }) {
     let data = msg.data
@@ -122,6 +143,44 @@ class GetStatus extends Plugin {
         break
       }
     }
+  }
+  private async checkListenMisses(message: raffleMessage | lotteryMessage | beatStormMessage) {
+    let cmd = message.cmd
+    let id = message.id
+    if (cmd === 'smallTV') cmd = 'raffle'
+    if (cmd === 'beatStorm') {
+      cmd = 'lottery'
+      id = Number(id.toString().substr(0, 6))
+    }
+    if (this.listenMisses[`${cmd}Start`] === 0
+      && this.todayListenMisses[`${cmd}Start`] === 0) {
+      this.listenMisses[`${cmd}Start`] = id
+      this.todayListenMisses[`${cmd}Start`] = id
+    }
+    else if (this.todayListenMisses[`${cmd}Start`] === 0)
+      this.todayListenMisses[`${cmd}Start`] = id
+    this.listenMisses[`${cmd}End`] = id
+    this.todayListenMisses[`${cmd}End`] = id
+    this.listenMisses.raffleMissed = this.listenMisses.raffleEnd
+      - this.listenMisses.raffleStart
+      - this.listenStatus.smallTV
+      - this.listenStatus.raffle
+      + (this.listenMisses.raffleStart === 0 ? 0 : 1)
+    this.listenMisses.lotteryMissed = this.listenMisses.lotteryEnd
+      - this.listenMisses.lotteryStart
+      - this.listenStatus.lottery
+      - this.listenStatus.beatStorm
+      + (this.listenMisses.lotteryStart === 0 ? 0 : 1)
+    this.todayListenMisses.raffleMissed = this.todayListenMisses.raffleEnd
+      - this.todayListenMisses.raffleStart
+      - this.todayListenStatus.smallTV
+      - this.todayListenStatus.raffle
+      + (this.todayListenMisses.raffleStart === 0 ? 0 : 1)
+    this.todayListenMisses.lotteryMissed = this.todayListenMisses.lotteryEnd
+      - this.todayListenMisses.lotteryStart
+      - this.todayListenStatus.lottery
+      - this.todayListenStatus.beatStorm
+      + (this.todayListenMisses.lotteryStart === 0 ? 0 : 1)
   }
   /**
    * 用户信息
@@ -252,7 +311,11 @@ class GetStatus extends Plugin {
     let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})`
     let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})`
     let beatStormLine: string = `共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})`
-    logMsg += headLine + '\n' + timeLine + '\n' + smallTVLine + '\n' + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine
+    let raffleMissedLine: string = `raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})`
+    let lotteryMissedLine: string = `lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})`
+    logMsg += headLine + '\n' + timeLine + '\n' + smallTVLine + '\n'
+      + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine + '\n'
+      + raffleMissedLine + '\n' + lotteryMissedLine + '\n'
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle, ban, vip: string = ''
       let user = rawMsg[uid]
@@ -332,6 +395,8 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})\n`
     pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})\n`
     pushMsg += `- 共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})\n`
+    pushMsg += `- raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})\n`
+    pushMsg += `- lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})\n`
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle, ban, vip: string = ''
       let user = rawMsg[uid]
@@ -415,6 +480,7 @@ interface userInfoData {
   vip: number
   svip: number
 }
+
 /**
  * 勋章信息
  *
