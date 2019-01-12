@@ -10,6 +10,14 @@
 
 不便之处，深感抱歉，可以打我xd
 
+## 关于验证码错误
+由于辣鸡B站似乎强制登录会产生验证码识别，我又没那个精力去搞云端识别，所以提供一个解决方法
+### 桌面环境(win/linux GUI)
+可以使用`/doc/index.html`设置页面进行设置，会自动将验证码传到浏览器
+### 命令行环境
+针对这种使用环境，我专门加了一个验证码serverChan推送功能\
+结合我的这个项目[bilive_client_connecter](https://github.com/Vector000/bilive_client_connecter)可以在命令行环境完成验证码的输入
+
 ## 使用releases
 不存在的，不存在的，永远也不会发release的
 

@@ -1,4 +1,5 @@
 import { CookieJar as requestCookieJar } from 'request'
+import request from 'request'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
 import Options, { apiLiveOrigin, liveOrigin } from './options'
@@ -193,6 +194,12 @@ class Online extends AppClient {
         this.captchaJPEG = `data:image/jpeg;base64,${captcha.data.toString('base64')}`
       this._heartTimer = setTimeout(() => this.Stop(), 60 * 1000)
       tools.Log(this.nickname, '验证码错误')
+      request.post(`https://sc.ftqq.com/${Options._.config.adminServerChan}.send`, { //之所以单独弄出来，是因为tools的XHR方法容易出问题，导致base64链接破损，影响体验
+        form: {
+          text: `BiLive_Client ${this.nickname}验证码`,
+          desp: `![captcha](${this.captchaJPEG})`
+        }
+      })
       return 'captcha'
     }
     else if (login.status === AppClient.status.error) {
