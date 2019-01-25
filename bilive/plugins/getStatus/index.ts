@@ -17,7 +17,7 @@ class GetStatus extends Plugin {
     lottery: 0,
     beatStorm: 0
   }
-  // 监听状态(Daily, 只统计当前0点开始的监听量)
+  // 监听状态(Daily, 只统计当天0点开始的监听量)
   private todayListenStatus: any = {
     smallTV: 0,
     raffle: 0,
@@ -33,7 +33,7 @@ class GetStatus extends Plugin {
     raffleMissed: 0,
     lotteryMissed: 0
   }
-  // 监听遗漏统计(Daily, 只统计当前0点开始的监听量)
+  // 监听遗漏统计(Daily, 只统计当天0点开始的监听量)
   private todayListenMisses: any = {
     raffleStart: 0,
     lotteryStart: 0,
@@ -49,11 +49,11 @@ class GetStatus extends Plugin {
   // 抽奖统计(Daily, 只统计当前0点开始的获奖量)
   private _todayRaffleStatus: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
-    defaultOptions.config['getStatus'] = 4
+    defaultOptions.config['getStatus'] = [1, 4]
     defaultOptions.info['getStatus'] = {
       description: '查看挂机状态',
-      tip: '定时log并推送运行状态数据，输入整数表示时间间隔(h)；若留空，则表示不推送',
-      type: 'number'
+      tip: '定时log并推送运行状态数据，输入两整数，以\",\"间隔，第一个参数为log间隔，第二个参数为push间隔，若留空，则表示不推送',
+      type: 'numberArray'
     }
     whiteList.add('getStatus')
     this.loaded = true
@@ -63,12 +63,13 @@ class GetStatus extends Plugin {
     this._clearStatus(this._todayRaffleStatus, users)
     this._banList.clear()
     this.listenStatus.startTime = Date.now()
-    this._getStatus(users)
+    this._getStatus(users, false)
   }
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
-    let time = <number>options.config.getStatus
-    if (cstMin === 0 && cstHour % time === 0) this._getStatus(users)
-    if (cstString === '01:00') {
+    let time = <number[]>options.config.getStatus
+    if (cstMin === 10 && cstHour % time[0] === 0) this._getStatus(users, false)
+    else if (cstMin === 10 && cstHour % time[1] === 0) this._getStatus(users, true)
+    if (cstString === '00:00') {
       this._clearStatus(this._todayRaffleStatus, users)
       for (let key in this.todayListenStatus) {
         this.todayListenStatus[key] = 0
@@ -188,7 +189,7 @@ class GetStatus extends Plugin {
    * @private
    * @memberof GetStatus
    */
-  private async _getStatus(users: Map<string, User>) {
+  private async _getStatus(users: Map<string, User>, push: boolean) {
     let rawMsg: any = {} // 原始消息数据
     for (const [uid, user] of users) {
       if (!user.userData.status) continue
@@ -204,7 +205,7 @@ class GetStatus extends Plugin {
       rawMsg[uid] = tmp
     }
     this._logMSGHandler(rawMsg)
-    this._pushMSGHandler(rawMsg)
+    if (push) this._pushMSGHandler(rawMsg)
   }
   /**
    * 获取liveInfo
