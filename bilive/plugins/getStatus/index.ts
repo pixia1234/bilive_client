@@ -43,7 +43,8 @@ class GetStatus extends Plugin {
     lotteryMissed: 0
   }
   // 封禁列表
-  private _banList: Map<string, boolean> = new Map()
+  private _raffleBanList: Map<string, boolean> = new Map()
+  private _stormBanList: Map<string, boolean> = new Map()
   // 抽奖统计
   private _raffleStatus: any = {}
   // 抽奖统计(Daily, 只统计当前0点开始的获奖量)
@@ -61,7 +62,8 @@ class GetStatus extends Plugin {
   public async start({ users }: { users: Map<string, User> }) {
     this._clearStatus(this._raffleStatus, users)
     this._clearStatus(this._todayRaffleStatus, users)
-    this._banList.clear()
+    this._raffleBanList.clear()
+    this._stormBanList.clear()
     this.listenStatus.startTime = Date.now()
     this._getStatus(users, false)
   }
@@ -87,19 +89,38 @@ class GetStatus extends Plugin {
   public async notify({ msg }: { msg: pluginNotify }) {
     let data = msg.data
     if (msg.cmd === 'ban') {
-      if (!this._banList.get(data.uid)) {
-        this._banList.set(data.uid, true)
-        tools.Log(`${data.nickname}已被封禁`)
-        tools.sendSCMSG(`${data.nickname}已被封禁`)
+      if (msg.data.type === 'raffle') {
+        if (!this._raffleBanList.get(data.uid)) {
+          this._raffleBanList.set(data.uid, true)
+          tools.Log(`${data.nickname}已进入辣条黑屋`)
+          tools.sendSCMSG(`${data.nickname}已进入辣条黑屋`)
+        }
       }
+      else {
+        if (!this._stormBanList.get(data.uid)) {
+          this._stormBanList.set(data.uid, true)
+          tools.Log(`${data.nickname}已进入风暴黑屋`)
+          tools.sendSCMSG(`${data.nickname}已进入风暴黑屋`)
+        }
+      }
+      
     }
     if (msg.cmd === 'earn') {
       this._addEarnStatus(this._raffleStatus, data.uid, msg.data)
       this._addEarnStatus(this._todayRaffleStatus, data.uid, msg.data)
-      if (this._banList.get(data.uid)) {
-        this._banList.set(data.uid, false)
-        tools.Log(`${data.nickname}已解除封禁`)
-        tools.sendSCMSG(`${data.nickname}已解除封禁`)
+      if (msg.data.type !== 'beatStorm') {
+        if (this._raffleBanList.get(data.uid)) {
+          this._raffleBanList.set(data.uid, false)
+          tools.Log(`${data.nickname}已离开辣条黑屋`)
+          tools.sendSCMSG(`${data.nickname}已离开辣条黑屋`)
+        }
+      }
+      else {
+        if (this._stormBanList.get(data.uid)) {
+          this._stormBanList.set(data.uid, false)
+          tools.Log(`${data.nickname}已离开风暴黑屋`)
+          tools.sendSCMSG(`${data.nickname}已离开风暴黑屋`)
+        }
       }
     }
     if (msg.cmd === 'join') {
@@ -196,7 +217,8 @@ class GetStatus extends Plugin {
       let tmp: any = {
         biliUID: user.userData.biliUID,
         nickname: user.nickname,
-        ban: (!this._banList.get(user.uid) || this._banList.get(user.uid) === undefined) ? false : true
+        raffleBan: (!this._raffleBanList.get(user.uid) || this._raffleBanList.get(user.uid) === undefined) ? false : true,
+        stormBan: (!this._stormBanList.get(user.uid) || this._stormBanList.get(user.uid) === undefined) ? false : true
       }
       tmp['liveData'] = await this._getLiveInfo(user)
       tmp['medalData'] = await this._getMedalInfo(user)
@@ -318,9 +340,10 @@ class GetStatus extends Plugin {
       + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine + '\n'
       + raffleMissedLine + '\n' + lotteryMissedLine + '\n'
     for (const uid in rawMsg) {
-      let line, live, medal, bag, raffle, ban, vip: string = ''
+      let line, live, medal, bag, raffle, rban, sban, vip: string = ''
       let user = rawMsg[uid]
-      user.ban ? ban = '已封禁' : ban = '未封禁'
+      user.raffleBan ? rban = '辣条黑屋' : rban = '无辣条黑屋'
+      user.stormBan ? sban = '风暴黑屋' : sban = '无风暴黑屋'
       if (user.vip === 0) vip = '不是老爷'
       else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
       else if (user.svip === 1) vip = '年费老爷'
@@ -332,7 +355,7 @@ class GetStatus extends Plugin {
 EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} \
 (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%)  \
 排名：${user.liveData.user_level_rank}\n金瓜子：${user.liveData.gold}  \
-银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${ban}  ${vip}`)
+银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${rban}|${sban}  ${vip}`)
         }
       }()
       medal = function() {
@@ -399,9 +422,10 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     pushMsg += `- raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})\n`
     pushMsg += `- lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})\n`
     for (const uid in rawMsg) {
-      let line, live, medal, bag, raffle, ban, vip: string = ''
+      let line, live, medal, bag, raffle, rban, sban, vip: string = ''
       let user = rawMsg[uid]
-      user.ban ? ban = '已封禁' : ban = '未封禁'
+      user.raffleBan ? rban = '辣条黑屋' : rban = '无辣条黑屋'
+      user.stormBan ? sban = '风暴黑屋' : sban = '无风暴黑屋'
       if (user.vip === 0) vip = '不是老爷'
       else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
       else if (user.svip === 1) vip = '年费老爷'
@@ -409,7 +433,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       live = function() {
         if (user.liveData === false) return (`## 用户信息获取失败\n`)
         else {
-          return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  ${vip}  当前状态：${ban}\n
+          return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  ${vip}  当前状态：${rban}|${sban}\n
 - EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%) \
 排名：${user.liveData.user_level_rank}\n- 金瓜子：${user.liveData.gold}  银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}\n`)
         }

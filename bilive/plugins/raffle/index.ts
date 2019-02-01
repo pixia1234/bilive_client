@@ -13,7 +13,8 @@ class Raffle extends Plugin {
   // 是否开启抽奖
   private _raffle = false
   // 封禁列表
-  private _banList: Map<string, boolean> = new Map()
+  private _raffleBanList: Map<string, boolean> = new Map()
+  private _stormBanList: Map<string, boolean> = new Map()
   // 限制列表
   private _raffleStatus: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
@@ -129,13 +130,18 @@ class Raffle extends Plugin {
     }
     else this._raffle = true
     if (cstString === '00:00') this._refreshRaffleCount(users)
-    if (cstMin === 0 && cstHour % 12 === 0)  this._banList.clear()
+    if (cstMin === 0 && cstHour % 12 === 0) {
+      this._raffleBanList.clear()
+      this._stormBanList.clear()
+    }
   }
   public async msg({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
     if (this._raffle) {
       users.forEach(async (user, uid) => {
         let raffleStatus = this._raffleStatus[uid]
-        if (user.captchaJPEG !== '' || this._banList.get(uid) || !user.userData[message.cmd]) return
+        if (user.captchaJPEG !== '' || !user.userData[message.cmd]) return
+        if (this._raffleBanList.get(uid) && message.cmd !== 'beatStorm') return
+        if (this._stormBanList.get(uid) && message.cmd === 'beatStorm') return
         if (raffleStatus !== undefined && raffleStatus[message.cmd] >= user.userData[`${message.cmd}Limit`]) return
         const droprate = <number>options.config['droprate']
         if (droprate !== 0 && Math.random() < droprate / 100) tools.Log(user.nickname, '丢弃抽奖', message.id)
@@ -143,7 +149,10 @@ class Raffle extends Plugin {
           const lottery = new Lottery(message, user)
           lottery
             .on('msg', (msg: pluginNotify) => {
-              if (msg.cmd === 'ban') this._banList.set(msg.data.uid, true)
+              if (msg.cmd === 'ban') {
+                if (msg.data.type === 'raffle') this._raffleBanList.set(msg.data.uid, true)
+                else this._stormBanList.set(msg.data.uid, true)
+              }
               if (msg.cmd === 'earn') this._checkLimit(msg)
               this.emit('msg', msg)
             })

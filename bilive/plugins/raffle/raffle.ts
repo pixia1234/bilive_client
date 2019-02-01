@@ -129,7 +129,7 @@ class Raffle extends EventEmitter {
         if (raffleAward.body.code === 400 && raffleAward.body.msg === '访问被拒绝') {
           this.emit('msg', {
             cmd: 'ban',
-            data: { uid: this._user.uid, nickname: this._user.nickname }
+            data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname }
           })
         }
       }
@@ -174,7 +174,7 @@ class Raffle extends EventEmitter {
         if (lotteryReward.body.code === 400 && lotteryReward.body.msg === '访问被拒绝') {
           this.emit('msg', {
             cmd: 'ban',
-            data: { uid: this._user.uid, nickname: this._user.nickname }
+            data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname }
           })
         }
       }
@@ -215,6 +215,12 @@ class Raffle extends EventEmitter {
               data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
             })
             i = <number>Options._.config.stormSetting
+          }
+          else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
+            this.emit('msg', {
+              cmd: 'ban',
+              data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
+            })
           }
           else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
