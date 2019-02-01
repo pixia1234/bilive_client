@@ -66,9 +66,6 @@ class GetStatus extends Plugin {
     this._getStatus(users, false)
   }
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
-    let time = <number[]>options.config.getStatus
-    if (cstMin === 10 && cstHour % time[0] === 0) this._getStatus(users, false)
-    else if (cstMin === 10 && cstHour % time[1] === 0) this._getStatus(users, true)
     if (cstString === '00:00') {
       this._clearStatus(this._todayRaffleStatus, users)
       for (let key in this.todayListenStatus) {
@@ -78,6 +75,9 @@ class GetStatus extends Plugin {
         this.todayListenMisses[key] = 0
       }
     }
+    let time = <number[]>options.config.getStatus
+    if (cstMin === 59 && cstHour % time[0] === 0) this._getStatus(users, false)
+    if (cstMin === 59 && cstHour % time[1] === 0) this._getStatus(users, true)
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
