@@ -235,7 +235,7 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getLiveInfo(user: User) {
-    let result: any = null
+    let result: any = undefined
     const userInfo: requestOptions = {
       uri: `https://api.live.bilibili.com/User/getUserInfo?ts=${AppClient.TS}`,
       json: true,
@@ -253,7 +253,7 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getMedalInfo(user: User) {
-    let result: any = null
+    let result: any = undefined
     const medalInfo: requestOptions = {
       uri: `https://api.live.bilibili.com/i/api/medal?page=1&pageSize=25`,
       json: true,
@@ -285,7 +285,7 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getBagInfo(user: User) {
-    let result: any = null
+    let result: any = undefined
     const bag: requestOptions = {
       uri: `https://api.live.bilibili.com/gift/v2/gift/m_bag_list?${AppClient.signQueryBase(user.tokenQuery)}`,
       json: true,
@@ -340,7 +340,7 @@ class GetStatus extends Plugin {
       + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine + '\n'
       + raffleMissedLine + '\n' + lotteryMissedLine + '\n'
     for (const uid in rawMsg) {
-      let line, live, medal, bag, raffle, vip: string = ''
+      let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
         if (r && s) return '已封禁|风暴黑屋'
@@ -348,13 +348,14 @@ class GetStatus extends Plugin {
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
-      if (user.vip === 0) vip = '不是老爷'
-      else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
-      else if (user.svip === 1) vip = '年费老爷'
       line = `/******************************用户 ${user.nickname} 信息******************************/`
       live = function() {
-        if (user.liveData === false) return (`用户信息获取失败`)
+        if (!user.liveData || user.liveData === undefined) return (`用户信息获取失败`)
         else {
+          let vip: string = ''
+          if (user.vip === 0) vip = '不是老爷'
+          else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
+          else if (user.svip === 1) vip = '年费老爷'
           return (`ID：${user.liveData.uname}  LV${user.liveData.user_level}  \
 EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} \
 (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%)  \
@@ -363,7 +364,7 @@ EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} \
         }
       }()
       medal = function() {
-        if (user.medalData === false) return (`勋章信息获取失败`)
+        if (!user.medalData || user.medalData === undefined) return (`勋章信息获取失败`)
         else if (user.medalData === -1) return (`未佩戴勋章`)
         else if (user.medalData === 0) return (`无勋章`)
         else {
@@ -374,7 +375,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         }
       }()
       bag = function() {
-        if (user.bagData === false) return (`包裹信息获取失败`)
+        if (!user.bagData || user.bagData === undefined) return (`包裹信息获取失败`)
         else if (user.bagData === 0) return (`包裹空空的`)
         else {
           let tmp: string = ''
@@ -426,7 +427,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     pushMsg += `- raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})\n`
     pushMsg += `- lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})\n`
     for (const uid in rawMsg) {
-      let line, live, medal, bag, raffle, vip: string = ''
+      let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
         if (r && s) return '已封禁|风暴黑屋'
@@ -434,20 +435,21 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
-      if (user.vip === 0) vip = '不是老爷'
-      else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
-      else if (user.svip === 1) vip = '年费老爷'
       line = `# 用户 *****${user.nickname}***** 信息\n`
       live = function() {
-        if (user.liveData === false) return (`## 用户信息获取失败\n`)
+        if (!user.liveData || user.liveData === undefined) return (`## 用户信息获取失败\n`)
         else {
+          let vip: string = ''
+          if (user.vip === 0) vip = '不是老爷'
+          else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
+          else if (user.svip === 1) vip = '年费老爷'
           return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  ${vip}  当前状态：${ban}\n
 - EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%) \
 排名：${user.liveData.user_level_rank}\n- 金瓜子：${user.liveData.gold}  银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}\n`)
         }
       }()
       medal = function() {
-        if (user.medalData === false) return (`## 勋章信息获取失败\n`)
+        if (!user.medalData || user.medalData === undefined) return (`## 勋章信息获取失败\n`)
         else if (user.medalData === -1) return (`## 未佩戴勋章\n`)
         else if (user.medalData === 0) return (`## 无勋章\n`)
         else {
@@ -456,7 +458,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         }
       }()
       bag = function() {
-        if (user.bagData === false) return (`## 包裹信息获取失败\n`)
+        if (!user.bagData || user.bagData === undefined) return (`## 包裹信息获取失败\n`)
         else if (user.bagData === 0) return (`## 包裹空空的\n`)
         else {
           let tmp: string = '## 包裹信息\n名称|数量|有效期\n---|:--:|---:\n'
