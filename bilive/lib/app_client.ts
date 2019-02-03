@@ -30,7 +30,8 @@ class AppClient {
   // bilibili 客户端
   private static readonly __secretKey: string = '560c52ccd288fed045859ed18bffd973'
   public static readonly appKey: string = '1d8b6e7d45233436'
-  public static readonly build: string = '5360000'
+  public static readonly build: string = '5370000'
+  public static readonly channel: string = 'xiaomi' //此时一位小米用户路过
   public static readonly device: string = 'android'
   public static readonly mobiApp: string = 'android'
   // bilibili 国际版
@@ -98,7 +99,7 @@ class AppClient {
    * @memberof AppClient
    */
   public static get baseQuery(): string {
-    return `actionKey=${this.actionKey}&appkey=${this.appKey}&build=${this.build}&device=${this.device}&mobi_app=${this.mobiApp}&platform=${this.platform}`
+    return `actionKey=${this.actionKey}&appkey=${this.appKey}&build=${this.build}&channel=${this.channel}&device=${this.device}&mobi_app=${this.mobiApp}&platform=${this.platform}`
   }
   /**
    * 对参数签名
@@ -199,7 +200,7 @@ class AppClient {
   public headers: request.Headers = {
     'Connection': 'Keep-Alive',
     'Device-ID': AppClient.DeviceID,
-    'User-Agent': 'Mozilla/5.0 BiliDroid/5.36.0 (bbcallen@gmail.com)'
+    'User-Agent': 'Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)'
   }
   /**
    * cookieJar
@@ -256,11 +257,11 @@ class AppClient {
   protected _auth(publicKey: getKeyResponseData): Promise<XHRresponse<authResponse> | undefined> {
     const passWord = this._RSAPassWord(publicKey)
     const captcha = this.captcha === '' ? '' : `&captcha=${this.captcha}`
-    const authQuery = `appkey=${AppClient.appKey}&build=${AppClient.build}${captcha}&mobi_app=${AppClient.mobiApp}\
+    const authQuery = `appkey=${AppClient.appKey}&build=${AppClient.build}${captcha}&channel=${AppClient.channel}&mobi_app=${AppClient.mobiApp}\
 &password=${passWord}&platform=${AppClient.platform}&ts=${AppClient.TS}&username=${encodeURIComponent(this.userName)}`
     const auth: request.Options = {
       method: 'POST',
-      uri: 'https://passport.bilibili.com/api/v2/oauth2/login',
+      uri: 'https://passport.bilibili.com/api/v3/oauth2/login',
       body: AppClient.signQuery(authQuery, false),
       jar: this.__jar,
       json: true,

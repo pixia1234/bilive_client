@@ -79,7 +79,7 @@ class GetStatus extends Plugin {
     }
     let time = <number[]>options.config.getStatus
     if (cstMin === 59 && cstHour % time[0] === 0) this._getStatus(users, false)
-    if (cstMin === 59 && cstHour % time[1] === 0) this._getStatus(users, true)
+    if (cstMin === 59 && (cstHour + 1) % time[1] === 0) this._getStatus(users, true)
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
@@ -293,7 +293,6 @@ class GetStatus extends Plugin {
     }
     const bagInfo = await tools.XHR<bagInfo>(bag, 'Android')
     if (bagInfo === undefined || bagInfo.response.statusCode !== 200 || bagInfo.body.code !== 0) result = false
-    else if (bagInfo.body.data.length === 0) result = 0
     else result = bagInfo.body.data
     return result
   }
@@ -376,7 +375,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       bag = function() {
         if (!user.bagData || user.bagData === undefined) return (`包裹信息获取失败`)
-        else if (user.bagData === 0) return (`包裹空空的`)
+        else if (user.bagData.length === 0) return (`包裹空空的`)
         else {
           let tmp: string = ''
           for (let i = 0; i < user.bagData.length; i++) {
@@ -459,7 +458,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       bag = function() {
         if (!user.bagData || user.bagData === undefined) return (`## 包裹信息获取失败\n`)
-        else if (user.bagData === 0) return (`## 包裹空空的\n`)
+        else if (user.bagData.length === 0) return (`## 包裹空空的\n`)
         else {
           let tmp: string = '## 包裹信息\n名称|数量|有效期\n---|:--:|---:\n'
           for (let i = 0; i < user.bagData.length; i++) {
