@@ -24,8 +24,8 @@ class AutoSend extends Plugin {
     this._autoSend(users)
   }
   public async loop({ cstMin, cstHour, users }: { cstMin: number, cstHour: number, users: Map<string, User> }) {
-    // 每天11:30, 23:30自动送礼
-    if (cstMin === 30 && cstHour % 12 === 11) this._autoSend(users)
+    // 每天11:50, 23:50自动送礼
+    if (cstMin === 50 && cstHour % 12 === 11) this._autoSend(users)
   }
   /**
    * 自动送礼V2
@@ -39,16 +39,12 @@ class AutoSend extends Plugin {
       // 获取佩戴勋章信息
       const uid = user.userData.biliUID
       const medal: requestOptions = {
-        method: `POST`,
-        uri: `https://api.live.bilibili.com/live_user/v1/UserInfo/get_weared_medal`,
-        body: `source=1&uid=${uid}&target_id=11153765&csrf_token=${tools.getCookie(user.jar, 'bili_jct')}`, // 使用3号直播间查询
-        json: true,
-        jar: user.jar,
-        headers: user.headers
+        uri: `https://api.live.bilibili.com/live_user/v1/UserInfo/get_weared_medal?uid=${uid}`,
+        json: true
       }
       const wearInfo = await tools.XHR<wearInfo>(medal)
       if (wearInfo === undefined || wearInfo.response.statusCode !== 200 || wearInfo.body.code !== 0) return
-      if (wearInfo.body.data !== null) {
+      if (wearInfo.body.data !== null && wearInfo.body.data.roominfo !== undefined) {
         const room_id = wearInfo.body.data.roominfo.room_id
         const mid = wearInfo.body.data.roominfo.uid
         const day_limit = wearInfo.body.data.day_limit
