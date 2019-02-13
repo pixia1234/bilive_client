@@ -58,7 +58,6 @@ class Raffle extends EventEmitter {
       json: true,
       headers: { 'Referer': `https://live.bilibili.com/${tools.getShortRoomID(roomID)}` }
     })
-    await tools.Sleep(<number>Options._.config.raffleDelay)
     switch (this._raffleMessage.cmd) {
       case 'smallTV':
         this._url = 'https://api.live.bilibili.com/gift/v4/smalltv'
