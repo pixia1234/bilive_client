@@ -50,17 +50,15 @@ class Raffle extends EventEmitter {
    */
   public async Start() {
     const { roomID } = this._raffleMessage
-    if (this._raffleMessage.cmd !== 'beatStorm') {
-      await tools.XHR({
-        method: 'POST',
-        uri: `https://api.live.bilibili.com/room/v1/Room/room_entry_action`,
-        body: `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
-        jar: this._user.jar,
-        json: true,
-        headers: { 'Referer': `https://live.bilibili.com/${tools.getShortRoomID(roomID)}` }
-      })
-      await tools.Sleep(<number>Options._.config.raffleDelay)
-    }
+    await tools.XHR({
+      method: 'POST',
+      uri: `https://api.live.bilibili.com/room/v1/Room/room_entry_action`,
+      body: `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
+      jar: this._user.jar,
+      json: true,
+      headers: { 'Referer': `https://live.bilibili.com/${tools.getShortRoomID(roomID)}` }
+    })
+    await tools.Sleep(<number>Options._.config.raffleDelay)
     switch (this._raffleMessage.cmd) {
       case 'smallTV':
         this._url = 'https://api.live.bilibili.com/gift/v4/smalltv'
@@ -197,7 +195,7 @@ class Raffle extends EventEmitter {
     }
     let joinStatus: boolean = false
     if (<number[]>Options._.config.stormSetting === undefined) return
-    for (let i = 0; i < (<number[]>Options._.config.stormSetting)[1]; i++) {
+    for (let i = 1; i <= (<number[]>Options._.config.stormSetting)[1]; i++) {
       tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
         if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
           if (!joinStatus) {
@@ -209,20 +207,20 @@ class Raffle extends EventEmitter {
           }
           const content = joinStorm.body.data
           if (content !== undefined && content.gift_num > 0) {
-            tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
+            tools.Log(this._user.nickname, title, id, `第${i}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
             this.emit('msg', {
               cmd: 'earn',
               data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
             })
             i = <number>Options._.config.stormSetting
           }
-          else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
+          else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
+          if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
             this.emit('msg', {
               cmd: 'ban',
               data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
             })
           }
-          else tools.Log(this._user.nickname, title, id, `第${i + 1}次尝试`, joinStorm.body.msg)
         }
       })
       await tools.Sleep((<number[]>Options._.config.stormSetting)[0])
