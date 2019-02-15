@@ -68,8 +68,7 @@ class BiLive {
     this._lastTime = cstString
     const cstHour = cst.getUTCHours()
     const cstMin = cst.getUTCMinutes()
-    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
-    if (server === undefined || protocol === undefined) this._Listener.updateAreaRoom() // 更新监听房间
+    if (Options._.config.localListener) this._Listener.updateAreaRoom() // 更新监听房间
     this._Listener.clearAllID() // 清空ID缓存
     this._pluginList.forEach(plugin => { // 插件运行
       if (typeof plugin.loop === 'function') plugin.loop({ cst, cstMin, cstHour, cstString, options: Options._, users: Options.user })

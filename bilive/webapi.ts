@@ -161,6 +161,35 @@ class WebAPI extends EventEmitter {
         else this._Send({ cmd, ts, msg, data: config })
       }
         break
+      // 获取高级设置
+      case 'getAdvConfig': {
+        const data = Options._.advConfig
+        this._Send({ cmd, ts, data })
+      }
+        break
+      // 保存高级设置
+      case 'setAdvConfig': {
+        const config = Options._.advConfig
+        const serverURL = config.serverURL
+        const setConfig = <config>message.data || {}
+        let msg = ''
+        for (const i in config) {
+          if (typeof config[i] !== typeof setConfig[i]) {
+            // 一般都是自用, 做一个简单的验证就够了
+            msg = i + '参数错误'
+            break
+          }
+        }
+        if (msg === '') {
+          // 防止setAdvConfig里有未定义属性, 不使用Object.assign
+          for (const i in config) config[i] = setConfig[i]
+          Options.save()
+          this._Send({ cmd, ts, data: config })
+          if (serverURL !== config.serverURL) Options.emit('clientUpdate')
+        }
+        else this._Send({ cmd, ts, msg, data: config })
+      }
+        break
       // 获取参数描述
       case 'getInfo': {
         const data = Options._.info
@@ -275,7 +304,7 @@ interface message {
   ts: string
   msg?: string
   uid?: string
-  data?: config | optionsInfo | string[] | userData
+  data?: config | advConfig | optionsInfo | string[] | userData
   captcha?: string
 }
 export default WebAPI

@@ -6,12 +6,15 @@
     "protocol": "admin"
   },
   "config": {
+    "localListener": false,
+    "adminServerChan": ""
+  },
+  "advConfig": {
     "defaultUserID": 0,
     "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
     "eventRooms": [
       3
-    ],
-    "adminServerChan": ""
+    ]
   },
   "user": {},
   "newUserData": {
@@ -25,9 +28,14 @@
     "status": false
   },
   "info": {
+    "localListener": {
+      "description": "本地监听开关",
+      "tip": "是否启用本地监听，默认关闭",
+      "type": "boolean"
+    },
     "defaultUserID": {
       "description": "默认监听UID",
-      "tip": "用来监听系统消息的用户ID, 默认为0",
+      "tip": "本地监听时连接弹幕服务器的用户ID, 默认为0",
       "type": "number"
     },
     "serverURL": {

@@ -62,6 +62,8 @@ class Options extends EventEmitter {
     'port',
     'protocol',
     'config',
+    'advConfig',
+    'localListener',
     'defaultUserID',
     'serverURL',
     'eventRooms',

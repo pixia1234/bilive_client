@@ -12,9 +12,12 @@ let optionsInfo;
 const dDiv = document.querySelector('#ddd');
 const loginDiv = document.querySelector('#login');
 const optionDiv = document.querySelector('#option');
+const advOptionDiv = document.querySelector('#advOption');
 const configDiv = document.querySelector('#config');
+const advConfigDiv = document.querySelector('#advConfig');
 const userDiv = document.querySelector('#user');
 const logDiv = document.querySelector('#log');
+const advOptionReturnButton = document.querySelector('#optionReturn');
 const returnButton = document.querySelector('#logreturn');
 const modalDiv = document.querySelector('.modal');
 const template = document.querySelector('#template');
@@ -97,6 +100,7 @@ function login() {
         };
         danimation(optionDiv);
         yield showConfig();
+        yield showAdvOption();
         yield showUser();
         showLog();
     });
@@ -109,6 +113,7 @@ function showConfig() {
     return __awaiter(this, void 0, void 0, function* () {
         const saveConfigButton = document.querySelector('#saveConfig');
         const addUserButton = document.querySelector('#addUser');
+        const showAdvButton = document.querySelector('#showAdvOption');
         const showLogButton = document.querySelector('#showLog');
         const configMSG = yield options.getConfig();
         let config = configMSG.data;
@@ -138,10 +143,44 @@ function showConfig() {
             modal({ body: '添加成功' });
         });
         // 显示日志
+        showAdvButton.onclick = () => {
+            danimation(advOptionDiv);
+        };
+        // 显示日志
         showLogButton.onclick = () => {
             danimation(logDiv);
         };
         configDiv.appendChild(configDF);
+    });
+}
+/**
+ * 加载高级设置
+ *
+ */
+function showAdvOption() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const saveConfigButton = document.querySelector('#saveConfig');
+        const configMSG = yield options.getAdvConfig();
+        let config = configMSG.data;
+        const advConfigDF = getConfigTemplate(config);
+        // 保存高级设置
+        saveConfigButton.onclick = () => __awaiter(this, void 0, void 0, function* () {
+            modal();
+            const configMSG = yield options.setAdvConfig(config);
+            if (configMSG.msg != null)
+                modal({ body: configMSG.msg });
+            else {
+                config = configMSG.data;
+                const advConfigDF = getConfigTemplate(config);
+                advConfigDiv.innerText = '';
+                advConfigDiv.appendChild(advConfigDF);
+                modal({ body: '保存成功' });
+            }
+        });
+        advOptionReturnButton.onclick = () => {
+            danimation(optionDiv);
+        };
+        advConfigDiv.appendChild(advConfigDF);
     });
 }
 /**

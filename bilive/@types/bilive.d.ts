@@ -10,6 +10,7 @@ interface options {
   [index: string]: any
   server: server
   config: config
+  advConfig: advConfig
   user: userCollection
   newUserData: userData
   info: optionsInfo
@@ -23,11 +24,16 @@ interface server {
   protocol: string
 }
 interface config {
-  [index: string]: number | string | number[]
+  [index: string]: boolean | number | string | number[]
+  localListener: boolean
+  adminServerChan: string
+}
+
+interface advConfig {
+  [index: string]: boolean | number | string | number[]
   defaultUserID: number
   serverURL: string
   eventRooms: number[]
-  adminServerChan: string
 }
 interface userCollection {
   [index: string]: userData
@@ -45,6 +51,7 @@ interface userData {
 }
 interface optionsInfo {
   [index: string]: configInfoData
+  localListener: configInfoData
   defaultUserID: configInfoData
   serverURL: configInfoData
   eventRooms: configInfoData

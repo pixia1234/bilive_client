@@ -34,7 +34,7 @@ class ClientRE extends Client {
    */
   public Update() {
     this._update = true
-    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
+    const { 0: server, 1: protocol } = Options._.advConfig.serverURL.split('#')
     if (protocol !== undefined && protocol !== '') {
       this._server = server
       this._protocol = protocol

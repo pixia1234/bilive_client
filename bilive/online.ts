@@ -98,7 +98,7 @@ class Online extends AppClient {
    * @returns {(Promise<'captcha' | 'stop' | void>)}
    * @memberof Online
    */
-  public async getOnlineInfo(roomID = Options._.config.eventRooms[0]): Promise<'captcha' | 'stop' | void> {
+  public async getOnlineInfo(roomID = Options._.advConfig.eventRooms[0]): Promise<'captcha' | 'stop' | void> {
     const isLogin = await tools.XHR<{ code: number }>({
       uri: `${liveOrigin}/user/getuserinfo`,
       jar: this.jar,
@@ -131,7 +131,7 @@ class Online extends AppClient {
    * @memberof Online
    */
   protected async _onlineHeart(): Promise<'cookieError' | 'tokenError' | void> {
-    const roomID = Options._.config.eventRooms[0]
+    const roomID = Options._.advConfig.eventRooms[0]
     const heartPC = await tools.XHR<userOnlineHeart>({
       method: 'POST',
       uri: `${apiLiveOrigin}/User/userOnlineHeart`,

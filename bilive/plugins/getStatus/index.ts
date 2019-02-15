@@ -7,7 +7,7 @@ class GetStatus extends Plugin {
   }
   public name = '运行统计'
   public description = '定时log并推送运行统计数据'
-  public version = '0.0.5'
+  public version = '0.0.6'
   public author = 'Vector000'
   // 监听状态
   private listenStatus: any = {
@@ -50,11 +50,11 @@ class GetStatus extends Plugin {
   // 抽奖统计(Daily, 只统计当前0点开始的获奖量)
   private _todayRaffleStatus: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
-    defaultOptions.config['getStatus'] = [1, 4]
+    defaultOptions.config['getStatus'] = 4
     defaultOptions.info['getStatus'] = {
       description: '查看挂机状态',
-      tip: '定时log并推送运行状态数据，输入两整数，以\",\"间隔，第一个参数为log间隔，第二个参数为push间隔，若留空，则表示不推送',
-      type: 'numberArray'
+      tip: '定时log并推送运行状态数据，若留空，则表示不推送',
+      type: 'number'
     }
     whiteList.add('getStatus')
     this.loaded = true
@@ -77,9 +77,9 @@ class GetStatus extends Plugin {
         this.todayListenMisses[key] = 0
       }
     }
-    let time = <number[]>options.config.getStatus
-    if (cstMin === 59 && cstHour % time[0] === 0) this._getStatus(users, false)
-    if (cstMin === 59 && (cstHour + 1) % time[1] === 0) this._getStatus(users, true)
+    let time = <number>options.config.getStatus
+    if (cstMin === 59) this._getStatus(users, false)
+    if (cstMin === 59 && (cstHour + 1) % time === 0) this._getStatus(users, true)
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
@@ -103,7 +103,7 @@ class GetStatus extends Plugin {
           tools.sendSCMSG(`${data.nickname}风暴已封禁`)
         }
       }
-      
+
     }
     if (msg.cmd === 'earn') {
       this._addEarnStatus(this._raffleStatus, data.uid, msg.data)

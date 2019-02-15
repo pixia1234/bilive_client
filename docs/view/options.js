@@ -169,6 +169,27 @@ class Options {
         return this._send(message);
     }
     /**
+     * 获取高级设置
+     *
+     * @returns {Promise<configMSG>}
+     * @memberof Options
+     */
+    getAdvConfig() {
+        const message = { cmd: 'getAdvConfig' };
+        return this._send(message);
+    }
+    /**
+     * 保存高级设置
+     *
+     * @param {config} data
+     * @returns {Promise<configMSG>}
+     * @memberof Options
+     */
+    setAdvConfig(data) {
+        const message = { cmd: 'setAdvConfig', data };
+        return this._send(message);
+    }
+    /**
      * 获取设置描述
      *
      * @returns {Promise<infoMSG>}

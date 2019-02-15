@@ -63,17 +63,34 @@
               <div class="card-header">
                 <h4>Bilive</h4>
               </div>
-              <div id="config" class="card-body">
-              </div>
+              <div id="config" class="card-body"></div>
               <div class="card-footer">
                 <button type="button" id="saveConfig" class="btn btn-primary">保存设置</button>
                 <button type="button" id="addUser" class="btn btn-primary">添加用户</button>
+                <button type="button" id="showAdvOption" class="btn btn-primary">高级设置</button>
                 <button type="button" id="showLog" class="btn btn-primary">显示日志</button>
               </div>
             </div>
           </div>
         </div>
         <div id="user" class="row"></div>
+      </div>
+      <!-- 高级设置 -->
+      <div id="advOption" class="container-fluid position-absolute d-none">
+        <div class="row justify-content-center">
+          <div class="col-md-8 m-3">
+            <div class="card border-primary">
+              <div class="card-header">
+                <h4>注意：除非你真的知道这是什么东西，不然就别瞎搞XD</h4>
+              </div>
+              <div id="advConfig" class="card-body"></div>
+              <div class="card-footer">
+                <button type="button" id="saveConfig" class="btn btn-primary">保存设置</button>
+                <button type="button" id="optionReturn" class="btn btn-primary">返回</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- 日志 -->
       <div id="log" class="container-fluid position-absolute d-none">
@@ -142,5 +159,4 @@
     </template>
   </div>
 </body>
-
 </html>

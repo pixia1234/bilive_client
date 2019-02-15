@@ -50,9 +50,10 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   public Start() {
-    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
+    if (Options._.config.localListener) this.updateAreaRoom()
+    const { 0: server, 1: protocol } = Options._.advConfig.serverURL.split('#')
     if (server !== undefined && protocol !== undefined) this._RoomListener(server, protocol)
-    else this.updateAreaRoom()
+    else tools.Log('未发现云监听服务器')
     // 3s清空一次消息缓存
     this._loop = setInterval(() => this._MSGCache.clear(), 3 * 1000)
   }
@@ -62,7 +63,7 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   public async updateAreaRoom() {
-    const userID = Options._.config.defaultUserID
+    const userID = Options._.advConfig.defaultUserID
     // 获取直播列表
     const getAllList = await tools.XHR<getAllList>({
       uri: `${apiLiveOrigin}/room/v2/AppIndex/getAllList?${AppClient.baseQuery}`,
@@ -124,7 +125,7 @@ class Listener extends EventEmitter {
       .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
       .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
       .Connect()
-    tools.Log(`已连接到 ${Options._.config.serverURL}`)
+    tools.Log(`已连接到 ${Options._.advConfig.serverURL}`)
     Options.on('clientUpdate', () => client.Update())
   }
   /**

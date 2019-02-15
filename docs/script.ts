@@ -3,9 +3,12 @@ let optionsInfo: optionsInfo
 const dDiv = <HTMLDivElement>document.querySelector('#ddd')
 const loginDiv = <HTMLDivElement>document.querySelector('#login')
 const optionDiv = <HTMLDivElement>document.querySelector('#option')
+const advOptionDiv = <HTMLDivElement>document.querySelector('#advOption')
 const configDiv = <HTMLDivElement>document.querySelector('#config')
+const advConfigDiv = <HTMLDivElement>document.querySelector('#advConfig')
 const userDiv = <HTMLDivElement>document.querySelector('#user')
 const logDiv = <HTMLDivElement>document.querySelector('#log')
+const advOptionReturnButton = <HTMLElement>document.querySelector('#optionReturn')
 const returnButton = <HTMLElement>document.querySelector('#logreturn')
 const modalDiv = <HTMLDivElement>document.querySelector('.modal')
 const template = <HTMLDivElement>document.querySelector('#template')
@@ -82,6 +85,7 @@ async function login() {
   }
   danimation(optionDiv)
   await showConfig()
+  await showAdvOption()
   await showUser()
   showLog()
 }
@@ -92,6 +96,7 @@ async function login() {
 async function showConfig() {
   const saveConfigButton = <HTMLElement>document.querySelector('#saveConfig')
   const addUserButton = <HTMLElement>document.querySelector('#addUser')
+  const showAdvButton = <HTMLElement>document.querySelector('#showAdvOption')
   const showLogButton = <HTMLElement>document.querySelector('#showLog')
   const configMSG = await options.getConfig()
   let config = configMSG.data
@@ -120,10 +125,41 @@ async function showConfig() {
     modal({ body: '添加成功' })
   }
   // 显示日志
+  showAdvButton.onclick = () => {
+    danimation(advOptionDiv)
+  }
+  // 显示日志
   showLogButton.onclick = () => {
     danimation(logDiv)
   }
   configDiv.appendChild(configDF)
+}
+/**
+ * 加载高级设置
+ *
+ */
+async function showAdvOption() {
+  const saveConfigButton = <HTMLElement>document.querySelector('#saveConfig')
+  const configMSG = await options.getAdvConfig()
+  let config = configMSG.data
+  const advConfigDF = getConfigTemplate(config)
+  // 保存高级设置
+  saveConfigButton.onclick = async () => {
+    modal()
+    const configMSG = await options.setAdvConfig(config)
+    if (configMSG.msg != null) modal({ body: configMSG.msg })
+    else {
+      config = configMSG.data
+      const advConfigDF = getConfigTemplate(config)
+      advConfigDiv.innerText = ''
+      advConfigDiv.appendChild(advConfigDF)
+      modal({ body: '保存成功' })
+    }
+  }
+  advOptionReturnButton.onclick = () => {
+    danimation(optionDiv)
+  }
+  advConfigDiv.appendChild(advConfigDF)
 }
 /**
  * 加载Log
