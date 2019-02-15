@@ -44,5 +44,6 @@ build
 .vscode
 options
 package-lock.json
-*.js
 temp
+docs/view/options.js
+docs/view/script.js
