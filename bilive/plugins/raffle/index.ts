@@ -7,8 +7,8 @@ class Raffle extends Plugin {
   }
   public name = '抽奖插件'
   public description = '自动参与抽奖'
-  public version = '0.0.1'
-  public author = 'lzghzr'
+  public version = '0.0.3'
+  public author = 'Vector000'
   public loaded = false
   // 是否开启抽奖
   private _raffle = false

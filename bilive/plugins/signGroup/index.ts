@@ -6,8 +6,8 @@ class SignGroup extends Plugin {
   }
   public name = '应援团签到'
   public description = '在已加入的应援团签到'
-  public version = '0.0.1'
-  public author = 'lzghzr'
+  public version = '0.0.2'
+  public author = 'Vector000'
   /**
    * 任务表
    *
@@ -31,10 +31,10 @@ class SignGroup extends Plugin {
     this._signGroup(users)
   }
   public async loop({ cstMin, cstHour, cstString, users }: { cstMin: number, cstHour: number, cstString: string, users: Map<string, User> }) {
-    // 每天00:10刷新任务
-    if (cstString === '00:10') this._signGroupList.clear()
-    // 每天04:30, 12:30, 20:30做任务
-    if (cstMin === 30 && cstHour % 8 === 4) this._signGroup(users)
+    // 每天06:00刷新任务
+    if (cstString === '06:00') this._signGroupList.clear()
+    // 每天06:30, 14:30, 22:30做任务
+    if (cstMin === 30 && cstHour % 8 === 6) this._signGroup(users)
   }
   /**
    * 应援团签到
@@ -60,7 +60,8 @@ class SignGroup extends Plugin {
           for (const groupInfo of linkGroup.body.data.list) {
             const sign: requestOptions = {
               uri: `https://api.live.bilibili.com/link_setting/v1/link_setting/sign_in?\
-${AppClient.signQueryBase(`${user.tokenQuery}&group_id=${groupInfo.group_id}&owner_id=${groupInfo.owner_uid}`)}`,
+                ${AppClient.signQueryBase(`${user.tokenQuery}&group_id=${groupInfo.group_id}\
+                &owner_id=${groupInfo.owner_uid}`)}`,
               json: true,
               headers: user.headers
             }
