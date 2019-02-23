@@ -34,35 +34,19 @@ class Raffle extends Plugin {
       type: 'numberArray'
     }
     whiteList.add('stormSetting')
-    // smallTV类抽奖的全局延迟
-    defaultOptions.advConfig['smallTVDelay'] = 3000
-    defaultOptions.info['smallTVDelay'] = {
-      description: 'smallTV延迟',
-      tip: '系统smallTV类抽奖的全局延迟，单位为毫秒(ms)，默认为3000',
-      type: 'number'
-    }
-    whiteList.add('smallTVDelay')
-    // raffle类抽奖的全局延迟
+    // 非beatStorm类抽奖的全局延迟
     defaultOptions.advConfig['raffleDelay'] = 3000
     defaultOptions.info['raffleDelay'] = {
       description: 'raffle延迟',
-      tip: '系统raffle类抽奖的全局延迟，单位为毫秒(ms)，默认为3000',
+      tip: '非节奏风暴抽奖的全局延迟，单位为毫秒(ms)，默认为3000',
       type: 'number'
     }
     whiteList.add('raffleDelay')
-    // lottery类抽奖的全局延迟
-    defaultOptions.advConfig['lotteryDelay'] = 3000
-    defaultOptions.info['lotteryDelay'] = {
-      description: 'lottery延迟',
-      tip: '系统lottery类抽奖的全局延迟，单位为毫秒(ms)，默认为3000',
-      type: 'number'
-    }
-    whiteList.add('lotteryDelay')
-    // beatStorm类抽奖的全局延迟
-    defaultOptions.advConfig['beatStormDelay'] = 300
+     // beatStorm类抽奖的全局延迟
+    defaultOptions.advConfig['beatStormDelay'] = 50
     defaultOptions.info['beatStormDelay'] = {
       description: 'beatStorm延迟',
-      tip: '系统beatStorm类抽奖的全局延迟，单位为毫秒(ms)，默认为300',
+      tip: '节奏风暴抽奖的全局延迟，单位为毫秒(ms)，默认为50',
       type: 'number'
     }
     whiteList.add('beatStormDelay')
@@ -162,7 +146,8 @@ class Raffle extends Plugin {
         const droprate = (<number[]>user.userData[`${message.cmd}Setting`])[1]
         if (droprate !== 0 && Math.random() < droprate / 100) tools.Log(user.nickname, '丢弃抽奖', message.id)
         else {
-          await tools.Sleep(<number>options.advConfig[`${message.cmd}Delay`])
+          const delay = message.cmd === 'beatStorm' ? <number>options.advConfig[`beatStormDelay`] : <number>options.advConfig[`raffleDelay`]
+          await tools.Sleep(delay)
           const lottery = new Lottery(message, user)
           lottery
             .on('msg', (msg: pluginNotify) => {

@@ -205,8 +205,8 @@ class Raffle extends EventEmitter {
       headers: this._user.headers
     }
     let joinStatus: boolean = false
-    if (<number[]>Options._.config.stormSetting === undefined) return
-    for (let i = 1; i <= (<number[]>Options._.config.stormSetting)[1]; i++) {
+    if (<number[]>Options._.advConfig.stormSetting === undefined) return
+    for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1]; i++) {
       tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
         if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
           if (!joinStatus) {
@@ -223,9 +223,10 @@ class Raffle extends EventEmitter {
               cmd: 'earn',
               data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
             })
-            i = <number>Options._.config.stormSetting
+            i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
           }
           else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
+          if (joinStorm.body.msg === '已经领取奖励') i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
           if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
             this.emit('msg', {
               cmd: 'ban',
@@ -234,7 +235,7 @@ class Raffle extends EventEmitter {
           }
         }
       })
-      await tools.Sleep((<number[]>Options._.config.stormSetting)[0])
+      await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }
   }
 }

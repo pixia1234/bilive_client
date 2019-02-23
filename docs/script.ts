@@ -139,12 +139,12 @@ async function showConfig() {
  *
  */
 async function showAdvOption() {
-  const saveConfigButton = <HTMLElement>document.querySelector('#saveConfig')
+  const saveAdvConfigButton = <HTMLElement>document.querySelector('#saveAdvConfig')
   const configMSG = await options.getAdvConfig()
   let config = configMSG.data
   const advConfigDF = getConfigTemplate(config)
   // 保存高级设置
-  saveConfigButton.onclick = async () => {
+  saveAdvConfigButton.onclick = async () => {
     modal()
     const configMSG = await options.setAdvConfig(config)
     if (configMSG.msg != null) modal({ body: configMSG.msg })
