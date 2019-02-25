@@ -31,10 +31,10 @@ class SignGroup extends Plugin {
     this._signGroup(users)
   }
   public async loop({ cstMin, cstHour, cstString, users }: { cstMin: number, cstHour: number, cstString: string, users: Map<string, User> }) {
-    // 每天06:00刷新任务
-    if (cstString === '06:00') this._signGroupList.clear()
-    // 每天06:30, 14:30, 22:30做任务
-    if (cstMin === 30 && cstHour % 8 === 6) this._signGroup(users)
+    // 每天08:00刷新任务
+    if (cstString === '08:00') this._signGroupList.clear()
+    // 每天08:30, 16:30做任务
+    if (cstMin === 30 && cstHour % 8 === 0 && cstHour >= 8) this._signGroup(users)
   }
   /**
    * 应援团签到
