@@ -96,6 +96,7 @@ class Options extends EventEmitter {
   public init() {
     this._.server = Object.assign({}, this._.server, this._userOption.server)
     this._.config = Object.assign({}, this._.config, this._userOption.config)
+    this._.advConfig = Object.assign({}, this._.advConfig, this._userOption.advConfig)
     for (const uid in this._userOption.user) {
       this.whiteList.add(uid)
       this._.user[uid] = Object.assign({}, this._.newUserData, this._userOption.user[uid])
