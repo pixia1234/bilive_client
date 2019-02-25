@@ -7,7 +7,7 @@ class MainSite extends Plugin {
   }
   public name = '主站功能'
   public description = '每天自动做主站功能（观看、分享、投币）'
-  public version = '0.0.3'
+  public version = '0.0.4'
   public author = 'Vector000'
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 自动签到
@@ -75,7 +75,7 @@ class MainSite extends Plugin {
         json: true
       }
       const getSummitVideo = await tools.XHR<getSummitVideo>(summitVideo)
-      if (getSummitVideo === undefined || getSummitVideo.response.statusCode !== 200) continue
+      if (getSummitVideo === undefined || getSummitVideo.response.statusCode !== 200 || getSummitVideo.body.data.vlist.length === 0) continue
       else getSummitVideo.body.data.vlist.forEach(item => { aids.push(item.aid) })
       await tools.Sleep(3 * 1000)
     }
