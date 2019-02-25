@@ -1,8 +1,9 @@
 # bilive_client
 
-这是一个次分支，感谢所有对[主分支](https://github.com/lzghzr/bilive_client)做出贡献的人及其他同类开源软件的开发者\
-有兴趣支持原作者的，请朝这里打钱=>[给lzghzr打钱](https://github.com/lzghzr/bilive_client/wiki)\
-有兴趣向我投喂的，请朝这里打钱=>[请给我钱](https://github.com/Vector000/Something_Serious/blob/master/pics/mm_reward_qrcode.png)
+* 这是一个次分支，感谢所有对[主分支](https://github.com/lzghzr/bilive_client)做出贡献的人及其他同类开源软件的开发者
+* 有兴趣支持原作者的，请朝这里打钱=>[给lzghzr打钱](https://github.com/lzghzr/bilive_client/wiki)
+* 有兴趣向我投喂的，请朝这里打钱=>[请给我钱](https://github.com/Vector000/Something_Serious/blob/master/pics/mm_reward_qrcode.png)
+
 
 * 感谢大佬的推荐！趴 _(:3」∠)_
 
@@ -15,10 +16,10 @@
 6. `npm install`
 7. `npm run clean` (编译前清理，第一次使用可跳过)
 8. `npm run build`
-9.  `npm start`
+9. `npm start`
 
-可使用网页设置：[点此进行设置](https://vector000.github.io/bilive_client_setting/)\
-推荐使用`doc/index.html`进行本地设置，网页设置不成功的或是远程挂机的可以使用\
+可使用网页设置：[点此进行设置](https://vector000.github.io/bilive_setting/)\
+推荐使用`doc/index.html`进行本地设置\
 
 ### 设置相关
 服务器挂机用户可通过防火墙设置来开启远程设置，但由此产生的信息泄露及其他风险请自行承担\
@@ -38,6 +39,6 @@
 * 节奏风暴多次发包以提高中奖率(设置过高风险自负)
 
 ## TO-DO
-* 用户优先级分类
+* 依特定优先级分批处理各用户的请求
 * 抽奖方法切换(web/app双端切换)
 * 咕咕咕咕咕咕咕
