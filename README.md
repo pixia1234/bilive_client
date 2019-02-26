@@ -8,15 +8,24 @@
 * 感谢大佬的推荐！趴 _(:3」∠)_
 
 ## 自行编译
+
+* 第一次使用
 1. 安装[Node.js](https://nodejs.org/)
 2. 安装[git](https://git-scm.com/downloads)
 3. `git clone https://github.com/Vector000/bilive_client.git` (第一次使用请先clone，或使用GitHub的Download ZIP[不推荐])
 4. `cd bilive_client`
-5. `git pull` (获取项目更新，第一次使用可跳过)
-6. `npm install`
-7. `npm run clean` (编译前清理，第一次使用可跳过)
-8. `npm run build`
-9. `npm start`
+5. `npm install`
+6. `npm run build`
+7. `npm start`
+
+* 版本更新
+1. 定位到目录
+2. `git pull`
+3. `npm install`
+4. `npm run clean`
+5. `npm run build`
+6. `npm start`
+更新之后可能会出现不兼容的情况，可删去`options/options.json`后重新进行设置
 
 可使用网页设置：[点此进行设置](https://vector000.github.io/bilive_setting/)\
 推荐使用`doc/index.html`进行本地设置\
