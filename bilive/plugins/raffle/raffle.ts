@@ -227,11 +227,12 @@ class Raffle extends EventEmitter {
           }
           else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
           if (joinStorm.body.msg === '已经领取奖励') i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
-          if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
+          else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
             this.emit('msg', {
               cmd: 'ban',
               data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
             })
+            i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
           }
         }
       })
