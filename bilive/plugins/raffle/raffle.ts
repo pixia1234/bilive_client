@@ -156,7 +156,7 @@ class Raffle extends EventEmitter {
         if (lotteryReward.body.code === 0) {
           tools.Log(this._user.nickname, title, id, lotteryReward.body.data.message)
           let type = lotteryReward.body.data.privilege_type
-          if (lotteryReward.body.data.message.indexOf('辣条X') !== -1) {
+          if (lotteryReward.body.data.message.indexOf('辣条X') === -1) {
             this.emit('msg', {
               cmd: 'earn',
               data: {
