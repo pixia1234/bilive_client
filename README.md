@@ -28,7 +28,7 @@
 更新之后可能会出现不兼容的情况，可删去`options/options.json`后重新进行设置
 
 可使用网页设置：[点此进行设置](https://vector000.github.io/bilive_setting/)\
-推荐使用`doc/index.html`进行本地设置\
+推荐使用`doc/index.html`进行本地设置
 
 ### 设置相关
 服务器挂机用户可通过防火墙设置来开启远程设置，但由此产生的信息泄露及其他风险请自行承担\

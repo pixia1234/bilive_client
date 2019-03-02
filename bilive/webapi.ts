@@ -36,7 +36,7 @@ class WebAPI extends EventEmitter {
     const server = http.createServer((req, res) => {
       req.on('error', error => tools.ErrorLog('req', error))
       res.on('error', error => tools.ErrorLog('res', error))
-      res.writeHead(302, { 'Location': '//github.halaal.win/bilive_client/' })
+      res.writeHead(302, { 'Location': '//vector000.github.io/bilive_setting/' })
       res.end()
     }).on('error', error => tools.ErrorLog('http', error))
     // 监听地址优先支持Unix Domain Socket
