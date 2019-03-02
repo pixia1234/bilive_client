@@ -61,7 +61,7 @@ class Raffle extends Plugin {
     // smallTV限制
     defaultOptions.newUserData['smallTVSetting'] = [200, 0]
     defaultOptions.info['smallTVSetting'] = {
-      description: 'smallTV设置',
+      description: 'smallTV限制',
       tip: '每日领取smallTV类抽奖的设置，以\",\"分隔，分别表示每日上限、丢弃概率',
       type: 'numberArray'
     }
