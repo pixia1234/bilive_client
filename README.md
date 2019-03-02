@@ -12,11 +12,12 @@
 * 第一次使用
 1. 安装[Node.js](https://nodejs.org/)
 2. 安装[git](https://git-scm.com/downloads)
-3. `git clone https://github.com/Vector000/bilive_client.git` (第一次使用请先clone，或使用GitHub的Download ZIP[不推荐])
-4. `cd bilive_client`
-5. `npm install`
-6. `npm run build`
-7. `npm start`
+3. 选择并定位到想要安装的目录
+4. `git clone https://github.com/Vector000/bilive_client.git`
+5. `cd bilive_client`
+6. `npm install`
+7. `npm run build`
+8. `npm start`
 
 * 版本更新
 1. 定位到目录
