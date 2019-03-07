@@ -105,10 +105,6 @@ class Raffle extends EventEmitter {
     }
     tools.XHR<raffleAward>(reward, 'Android').then(raffleAward => {
       if (raffleAward !== undefined && raffleAward.response.statusCode === 200) {
-        this.emit('msg', {
-          cmd: 'join',
-          data: { uid: this._user.uid, type: cmd }
-        })
         if (raffleAward.body.code === 0) {
           const gift = raffleAward.body.data
           if (gift.gift_num === 0) tools.Log(this._user.nickname, title, id, raffleAward.body.msg)
@@ -149,35 +145,20 @@ class Raffle extends EventEmitter {
     }
     tools.XHR<lotteryReward>(reward, 'Android').then(lotteryReward => {
       if (lotteryReward !== undefined && lotteryReward.response.statusCode === 200) {
-        this.emit('msg', {
-          cmd: 'join',
-          data: { uid: this._user.uid, type: 'lottery' }
-        })
         if (lotteryReward.body.code === 0) {
-          tools.Log(this._user.nickname, title, id, lotteryReward.body.data.message)
-          let type = lotteryReward.body.data.privilege_type
-          if (lotteryReward.body.data.message.indexOf('辣条X') === -1) {
-            this.emit('msg', {
-              cmd: 'earn',
-              data: {
-                uid: this._user.uid,
-                nickname: this._user.nickname,
-                type: 'lottery',
-                name: '亲密度',
-                num: (type === 1 ? 20 : (type === 2 ? 5 : 1))
-              }
-            })
-          }
-          else this.emit('msg', {
+          let data = lotteryReward.body.data
+          let type = data.privilege_type
+          this.emit('msg', {
             cmd: 'earn',
             data: {
               uid: this._user.uid,
               nickname: this._user.nickname,
               type: 'lottery',
-              name: '辣条',
+              name: data.message.includes('辣条X') ? '辣条' : '亲密度',
               num: (type === 1 ? 20 : (type === 2 ? 5 : 1))
             }
           })
+          tools.Log(this._user.nickname, title, id, data.message)
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
         if (lotteryReward.body.code === 400 && lotteryReward.body.msg === '访问被拒绝') {
@@ -204,38 +185,31 @@ class Raffle extends EventEmitter {
       json: true,
       headers: this._user.headers
     }
-    let joinStatus: boolean = false
     if (<number[]>Options._.advConfig.stormSetting === undefined) return
     for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1]; i++) {
-      tools.XHR<joinStorm>(join, 'Android').then(joinStorm => {
-        if (joinStorm !== undefined && joinStorm.response.statusCode === 200 && joinStorm.body !== undefined) {
-          if (!joinStatus) {
-            this.emit('msg', {
-              cmd: 'join',
-              data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm' }
-            })
-            joinStatus = true
-          }
-          const content = joinStorm.body.data
-          if (content !== undefined && content.gift_num > 0) {
-            tools.Log(this._user.nickname, title, id, `第${i}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
-            this.emit('msg', {
-              cmd: 'earn',
-              data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
-            })
-            i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
-          }
-          else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
-          if (joinStorm.body.msg === '已经领取奖励') i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
-          else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
-            this.emit('msg', {
-              cmd: 'ban',
-              data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
-            })
-            i = (<number[]>Options._.advConfig.stormSetting)[1] + 1
-          }
+      let joinStorm = await tools.XHR<joinStorm>(join, 'Android')
+      if (joinStorm === undefined || joinStorm.response.statusCode !== 200) return
+      if (joinStorm.response.statusCode !== 200) return
+      if (joinStorm.body.code === 0) {
+        const content = joinStorm.body.data
+        if (content !== undefined && content.gift_num > 0) {
+          tools.Log(this._user.nickname, title, id, `第${i}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
+          this.emit('msg', {
+            cmd: 'earn',
+            data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
+          })
+          return
         }
-      })
+      }
+      else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
+      if (joinStorm.body.msg === '已经领取奖励') return
+      else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
+        this.emit('msg', {
+          cmd: 'ban',
+          data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
+        })
+        return
+      }
       await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }
   }

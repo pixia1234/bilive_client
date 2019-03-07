@@ -24,24 +24,6 @@ class GetStatus extends Plugin {
     lottery: 0,
     beatStorm: 0
   }
-  // 监听遗漏统计
-  private listenMisses: any = {
-    raffleStart: 0,
-    lotteryStart: 0,
-    raffleEnd: 0,
-    lotteryEnd: 0,
-    raffleMissed: 0,
-    lotteryMissed: 0
-  }
-  // 监听遗漏统计(Daily, 只统计当天0点开始的监听量)
-  private todayListenMisses: any = {
-    raffleStart: 0,
-    lotteryStart: 0,
-    raffleEnd: 0,
-    lotteryEnd: 0,
-    raffleMissed: 0,
-    lotteryMissed: 0
-  }
   // 封禁列表
   private _raffleBanList: Map<string, boolean> = new Map()
   private _stormBanList: Map<string, boolean> = new Map()
@@ -73,9 +55,6 @@ class GetStatus extends Plugin {
       for (let key in this.todayListenStatus) {
         this.todayListenStatus[key] = 0
       }
-      for (let key in this.todayListenMisses) {
-        this.todayListenMisses[key] = 0
-      }
     }
     let time = <number>options.config.getStatus
     if (cstMin === 59) this._getStatus(users, false)
@@ -84,7 +63,6 @@ class GetStatus extends Plugin {
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
     this.todayListenStatus[message.cmd]++
-    this.checkListenMisses(message)
   }
   public async notify({ msg }: { msg: pluginNotify }) {
     let data = msg.data
@@ -123,10 +101,6 @@ class GetStatus extends Plugin {
         }
       }
     }
-    if (msg.cmd === 'join') {
-      this._raffleStatus[data.uid].joined[data.type]++
-      this._todayRaffleStatus[data.uid].joined[data.type]++
-    }
   }
   /**
    * 清除状态缓存
@@ -135,18 +109,8 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _clearStatus(status: any, users: Map<string, User>) {
-    users.forEach(user => {
-      status[user.uid] = {
-        earned: [],
-        joined: {
-          smallTV: 0,
-          raffle: 0,
-          lottery: 0,
-          beatStorm: 0
-        }
-      }
-    })
-  }
+    users.forEach(user => { status[user.uid] = { earned: [] } })
+  }    
   /**
    * 获取礼物数量+1
    *
@@ -165,44 +129,6 @@ class GetStatus extends Plugin {
         break
       }
     }
-  }
-  private async checkListenMisses(message: raffleMessage | lotteryMessage | beatStormMessage) {
-    let cmd = message.cmd
-    let id = message.id
-    if (cmd === 'smallTV') cmd = 'raffle'
-    if (cmd === 'beatStorm') {
-      cmd = 'lottery'
-      id = Number(id.toString().substr(0, 6))
-    }
-    if (this.listenMisses[`${cmd}Start`] === 0
-      && this.todayListenMisses[`${cmd}Start`] === 0) {
-      this.listenMisses[`${cmd}Start`] = id
-      this.todayListenMisses[`${cmd}Start`] = id
-    }
-    else if (this.todayListenMisses[`${cmd}Start`] === 0)
-      this.todayListenMisses[`${cmd}Start`] = id
-    this.listenMisses[`${cmd}End`] = id
-    this.todayListenMisses[`${cmd}End`] = id
-    this.listenMisses.raffleMissed = this.listenMisses.raffleEnd
-      - this.listenMisses.raffleStart
-      - this.listenStatus.smallTV
-      - this.listenStatus.raffle
-      + (this.listenMisses.raffleStart === 0 ? 0 : 1)
-    this.listenMisses.lotteryMissed = this.listenMisses.lotteryEnd
-      - this.listenMisses.lotteryStart
-      - this.listenStatus.lottery
-      - this.listenStatus.beatStorm
-      + (this.listenMisses.lotteryStart === 0 ? 0 : 1)
-    this.todayListenMisses.raffleMissed = this.todayListenMisses.raffleEnd
-      - this.todayListenMisses.raffleStart
-      - this.todayListenStatus.smallTV
-      - this.todayListenStatus.raffle
-      + (this.todayListenMisses.raffleStart === 0 ? 0 : 1)
-    this.todayListenMisses.lotteryMissed = this.todayListenMisses.lotteryEnd
-      - this.todayListenMisses.lotteryStart
-      - this.todayListenStatus.lottery
-      - this.todayListenStatus.beatStorm
-      + (this.todayListenMisses.lotteryStart === 0 ? 0 : 1)
   }
   /**
    * 用户信息
@@ -223,7 +149,7 @@ class GetStatus extends Plugin {
       tmp['liveData'] = await this._getLiveInfo(user)
       tmp['medalData'] = await this._getMedalInfo(user)
       tmp['bagData'] = await this._getBagInfo(user)
-      tmp['raffleData'] = await this._getRaffleInfo(user)
+      tmp['earnData'] = await this._getEarnInfo(user)
       rawMsg[uid] = tmp
     }
     this._logMSGHandler(rawMsg)
@@ -297,26 +223,18 @@ class GetStatus extends Plugin {
     return result
   }
   /**
-   * 获取raffleInfo
+   * 已获取奖励
    *
    * @memberof GetStatus
    */
-  private async _getRaffleInfo(user: User) {
-    let result: any = {
-      joinData: {
-        total: {},
-        today: {}
-      },
-      earnData: {
-        total: {},
-        today: {}
-      }
+  private async _getEarnInfo(user: User) {
+    let earnData: any = {
+      total: {},
+      today: {}
     }
-    result.joinData.total = this._raffleStatus[user.uid].joined
-    result.joinData.today = this._todayRaffleStatus[user.uid].joined
-    result.earnData.total = this._raffleStatus[user.uid].earned
-    result.earnData.today = this._todayRaffleStatus[user.uid].earned
-    return result
+    earnData.total = this._raffleStatus[user.uid].earned
+    earnData.today = this._todayRaffleStatus[user.uid].earned
+    return earnData
   }
   /**
    * 处理logMSG
@@ -333,11 +251,8 @@ class GetStatus extends Plugin {
     let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})`
     let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})`
     let beatStormLine: string = `共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})`
-    let raffleMissedLine: string = `raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})`
-    let lotteryMissedLine: string = `lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})`
     logMsg += headLine + '\n' + timeLine + '\n' + smallTVLine + '\n'
       + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine + '\n'
-      + raffleMissedLine + '\n' + lotteryMissedLine + '\n'
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
@@ -347,7 +262,7 @@ class GetStatus extends Plugin {
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
-      line = `/******************************用户 ${user.nickname} 信息******************************/`
+      line = `\n/****************************** 用户 ${user.nickname} 信息 ******************************/\n`
       live = function() {
         if (!user.liveData || user.liveData === undefined) return (`用户信息获取失败`)
         else {
@@ -373,6 +288,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
 排名：${user.medalData.rank}`)
         }
       }()
+      let bagDiv: string = '\n\n-------------------------- 包裹信息 --------------------------\n'
       bag = function() {
         if (!user.bagData || user.bagData === undefined) return (`包裹信息获取失败`)
         else if (user.bagData.length === 0) return (`包裹空空的`)
@@ -393,18 +309,13 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         }
       }()
       raffle = function() {
-        let tmp: string = '\n本次挂机，此账号共参与抽奖：\n'
-        tmp += `smallTV抽奖：${user.raffleData.joinData.total.smallTV}(${user.raffleData.joinData.today.smallTV})\n`
-        tmp += `raffle抽奖：${user.raffleData.joinData.total.raffle}(${user.raffleData.joinData.today.raffle})\n`
-        tmp += `lottery抽奖：${user.raffleData.joinData.total.lottery}(${user.raffleData.joinData.today.lottery})\n`
-        tmp += `beatStorm抽奖：${user.raffleData.joinData.total.beatStorm}(${user.raffleData.joinData.today.beatStorm})\n`
-        tmp += `共获得奖励：\n`
-        user.raffleData.earnData.total.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
-        tmp += `今日收益：\n`
-        user.raffleData.earnData.today.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        let tmp: string = '\n本次挂机，此账号共获得奖励：\n'
+        user.earnData.total.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        tmp += '今日收益：\n'
+        user.earnData.today.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
         return tmp
       }()
-      logMsg += '\n' + line + '\n' + live + '\n' + medal + '\n' + bag + '\n' + raffle + '\n'
+      logMsg += line + live + '\n' + medal + bagDiv + bag + '\n' + raffle + '\n'
     }
     tools.Log(logMsg)
   }
@@ -423,8 +334,6 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})\n`
     pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})\n`
     pushMsg += `- 共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})\n`
-    pushMsg += `- raffle漏监听：${this.listenMisses.raffleMissed}(${this.todayListenMisses.raffleMissed})\n`
-    pushMsg += `- lottery漏监听：${this.listenMisses.lotteryMissed}(${this.todayListenMisses.lotteryMissed})\n`
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
@@ -476,14 +385,10 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       raffle = function() {
         let tmp: string = '## 抽奖情况\n'
-        tmp += `- smallTV抽奖：${user.raffleData.joinData.total.smallTV}(${user.raffleData.joinData.today.smallTV})\n`
-        tmp += `- raffle抽奖：${user.raffleData.joinData.total.raffle}(${user.raffleData.joinData.today.raffle})\n`
-        tmp += `- lottery抽奖：${user.raffleData.joinData.total.lottery}(${user.raffleData.joinData.today.lottery})\n`
-        tmp += `- beatStorm抽奖：${user.raffleData.joinData.total.beatStorm}(${user.raffleData.joinData.today.beatStorm})\n`
         tmp += `### 共获得奖励：\n`
-        user.raffleData.earnData.total.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        user.earnData.total.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
         tmp += `### 今日收益：\n`
-        user.raffleData.earnData.today.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        user.earnData.today.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
         return tmp
       }()
       pushMsg += '\n---\n' + line + '\n---\n' + live + '\n---\n' + medal + '\n---\n' + bag + '\n---\n' + raffle + '\n---\n'

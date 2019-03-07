@@ -16,7 +16,7 @@ class Raffle extends Plugin {
   private _raffleBanList: Map<string, boolean> = new Map()
   private _stormBanList: Map<string, boolean> = new Map()
   // 限制列表
-  private _raffleStatus: any = {}
+  private _stormNum: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 抽奖暂停
     defaultOptions.config['rafflePause'] = []
@@ -50,6 +50,22 @@ class Raffle extends Plugin {
       type: 'number'
     }
     whiteList.add('beatStormDelay')
+    // smallTV/raffle/lottery丢弃概率
+    defaultOptions.advConfig['raffleDrop'] = 0
+    defaultOptions.info['raffleDrop'] = {
+      description: '抽奖丢弃',
+      tip: '非节奏风暴抽奖的丢弃概率，0-100(百分比)',
+      type: 'number'
+    }
+    whiteList.add('raffleDrop')
+    // beatStorm丢弃概率
+    defaultOptions.advConfig['beatStormDrop'] = 0
+    defaultOptions.info['beatStormDrop'] = {
+      description: '风暴丢弃',
+      tip: '节奏风暴抽奖的丢弃概率，0-100(百分比)',
+      type: 'number'
+    }
+    whiteList.add('beatStormDrop')
     // 小电视抽奖
     defaultOptions.newUserData['smallTV'] = false
     defaultOptions.info['smallTV'] = {
@@ -58,46 +74,23 @@ class Raffle extends Plugin {
       type: 'boolean'
     }
     whiteList.add('smallTV')
-    // smallTV限制
-    defaultOptions.newUserData['smallTVSetting'] = [200, 0]
-    defaultOptions.info['smallTVSetting'] = {
-      description: 'smallTV限制',
-      tip: '每日领取smallTV类抽奖的设置，以\",\"分隔，分别表示每日上限、丢弃概率',
-      type: 'numberArray'
-    }
     whiteList.add('smallTVSetting')
     // raffle类抽奖
     defaultOptions.newUserData['raffle'] = false
     defaultOptions.info['raffle'] = {
-      description: 'raffle类抽奖',
-      tip: '自动参与raffle类抽奖',
+      description: '活动抽奖',
+      tip: '自动参与活动抽奖',
       type: 'boolean'
     }
     whiteList.add('raffle')
-    // raffle限制
-    defaultOptions.newUserData['raffleSetting'] = [500, 0]
-    defaultOptions.info['raffleSetting'] = {
-      description: 'raffle限制',
-      tip: '每日领取raffle类抽奖的设置，以\",\"分隔，分别表示每日上限、丢弃概率',
-      type: 'numberArray'
-    }
-    whiteList.add('raffleSetting')
     // lottery类抽奖
     defaultOptions.newUserData['lottery'] = false
     defaultOptions.info['lottery'] = {
-      description: 'lottery类抽奖',
+      description: '舰队抽奖',
       tip: '自动参与lottery类抽奖',
       type: 'boolean'
     }
     whiteList.add('lottery')
-    // lottery限制
-    defaultOptions.newUserData['lotterySetting'] = [1000, 0]
-    defaultOptions.info['lotterySetting'] = {
-      description: 'lottery限制',
-      tip: '每日领取lottery类抽奖的设置，以\",\"分隔，分别表示每日上限、丢弃概率0',
-      type: 'numberArray'
-    }
-    whiteList.add('lotterySetting')
     // 节奏风暴
     defaultOptions.newUserData['beatStorm'] = false
     defaultOptions.info['beatStorm'] = {
@@ -107,17 +100,22 @@ class Raffle extends Plugin {
     }
     whiteList.add('beatStorm')
     // beatStorm限制
-    defaultOptions.newUserData['beatStormSetting'] = [200, 0]
-    defaultOptions.info['beatStormSetting'] = {
+    defaultOptions.newUserData['beatStormLimit'] = 50
+    defaultOptions.info['beatStormLimit'] = {
       description: 'beatStorm限制',
-      tip: '每日领取beatStorm类抽奖的设置，以\",\"分隔，分别表示每日上限、丢弃概率',
-      type: 'numberArray'
+      tip: '每日领取beatStorm类抽奖奖励的限制',
+      type: 'number'
     }
-    whiteList.add('beatStormSetting')
+    whiteList.add('beatStormLimit')
     this.loaded = true
   }
+  private async _refreshCount(users: Map<string, User>) {
+    users.forEach(user => {
+      this._stormNum[user.uid] = 0
+    })
+  }
   public async start({ users }: { users: Map<string, User> }) {
-    this._refreshRaffleCount(users)
+    this._refreshCount(users)
   }
   public async loop({ cstMin, cstHour, cstString, options, users }: { cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }) {
     // 抽奖暂停
@@ -129,7 +127,7 @@ class Raffle extends Plugin {
       else this._raffle = true
     }
     else this._raffle = true
-    if (cstString === '00:00') this._refreshRaffleCount(users)
+    if (cstString === '00:00') this._refreshCount(users)
     if (cstMin === 0 && cstHour % 12 === 0) {
       this._raffleBanList.clear()
       this._stormBanList.clear()
@@ -138,15 +136,14 @@ class Raffle extends Plugin {
   public async msg({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
     if (this._raffle) {
       users.forEach(async (user, uid) => {
-        let raffleStatus = this._raffleStatus[uid]
         if (user.captchaJPEG !== '' || !user.userData[message.cmd]) return
         if (this._raffleBanList.get(uid)) return
         if (this._stormBanList.get(uid) && message.cmd === 'beatStorm') return
-        if (raffleStatus !== undefined && raffleStatus[message.cmd] >= (<number[]>user.userData[`${message.cmd}Setting`])[0]) return
-        const droprate = (<number[]>user.userData[`${message.cmd}Setting`])[1]
+        if (this._stormNum[uid] !== undefined && message.cmd === 'beatStorm' && this._stormNum[uid] >= <number>user.userData['beatStormLimit']) return
+        const droprate = message.cmd === 'beatStorm' ? <number>options.advConfig['beatStormDrop'] : <number>options.advConfig['raffleDrop']
         if (droprate !== 0 && Math.random() < droprate / 100) tools.Log(user.nickname, '丢弃抽奖', message.id)
         else {
-          const delay = message.cmd === 'beatStorm' ? <number>options.advConfig[`beatStormDelay`] : <number>options.advConfig[`raffleDelay`]
+          const delay = message.cmd === 'beatStorm' ? <number>options.advConfig['beatStormDelay'] : <number>options.advConfig['raffleDelay']
           await tools.Sleep(delay)
           const lottery = new Lottery(message, user)
           lottery
@@ -155,28 +152,13 @@ class Raffle extends Plugin {
                 if (msg.data.type === 'raffle') this._raffleBanList.set(msg.data.uid, true)
                 else this._stormBanList.set(msg.data.uid, true)
               }
-              if (msg.cmd === 'earn') this._checkSetting(msg)
+              if (msg.cmd === 'earn' && msg.data.type === 'beatStorm') this._stormNum[uid]++
               this.emit('msg', msg)
             })
             .Start()
         }
       })
     }
-  }
-  private async _refreshRaffleCount(users: Map<string, User>) {
-    users.forEach(user => {
-      this._raffleStatus[user.uid] = {
-        smallTV: 0,
-        raffle: 0,
-        lottery: 0,
-        beatStorm: 0
-      }
-    })
-  }
-  private async _checkSetting(msg: pluginNotify) {
-    const { uid, type } = msg.data
-    let raffleStatus = this._raffleStatus[uid]
-    raffleStatus[type]++
   }
 }
 

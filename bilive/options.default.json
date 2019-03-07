@@ -68,16 +68,6 @@
       "tip": "密码",
       "type": "string"
     },
-    "biliUID": {
-      "description": "B站UID",
-      "tip": "bilibili站内的UID, 自动获取, 一般无用",
-      "type": "number"
-    },
-    "cookie": {
-      "description": "Cookie",
-      "tip": "cookie, 自动获取, 一般无用",
-      "type": "string"
-    },
     "status": {
       "description": "开关",
       "tip": "用户设置的总开关, 关闭时以下设置全部失效",
