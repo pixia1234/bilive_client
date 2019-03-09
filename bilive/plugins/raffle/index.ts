@@ -74,7 +74,6 @@ class Raffle extends Plugin {
       type: 'boolean'
     }
     whiteList.add('smallTV')
-    whiteList.add('smallTVSetting')
     // raffle类抽奖
     defaultOptions.newUserData['raffle'] = false
     defaultOptions.info['raffle'] = {
