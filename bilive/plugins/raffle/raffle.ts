@@ -196,7 +196,7 @@ class Raffle extends EventEmitter {
           tools.Log(this._user.nickname, title, id, `第${i}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
           this.emit('msg', {
             cmd: 'earn',
-            data: { uid: this._user.uid, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
+            data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
           })
           return
         }
