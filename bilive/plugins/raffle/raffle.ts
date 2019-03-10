@@ -188,8 +188,8 @@ class Raffle extends EventEmitter {
     if (<number[]>Options._.advConfig.stormSetting === undefined) return
     for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1]; i++) {
       let joinStorm = await tools.XHR<joinStorm>(join, 'Android')
-      if (joinStorm === undefined || joinStorm.response.statusCode !== 200) return
-      if (joinStorm.response.statusCode !== 200) return
+      if (joinStorm === undefined) return
+      if (joinStorm.response.statusCode !== 200) return tools.Log(this._user.nickname, title, id, joinStorm.response.statusCode)
       if (joinStorm.body.code === 0) {
         const content = joinStorm.body.data
         if (content !== undefined && content.gift_num > 0) {
