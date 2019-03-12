@@ -244,9 +244,7 @@ class GetStatus extends Plugin {
   private _logMSGHandler(rawMsg: any) {
     let logMsg: string = '\n'
     let headLine: string = `/********************************* bilive_client 运行信息 *********************************/`
-    let startTime = new Date()
-    startTime.setTime(this.listenStatus.startTime)
-    let timeLine: string = `本次挂机开始于 ${startTime}`
+    let timeLine: string = `本次挂机开始于 ${new Date(this.listenStatus.startTime).toString()}`
     let smallTVLine: string = `共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})`
     let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})`
     let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})`
@@ -257,8 +255,7 @@ class GetStatus extends Plugin {
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
-        if (r && s) return '已封禁|风暴黑屋'
-        else if (r && !s) return '已封禁'
+        if (r && s) return '已封禁'
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
@@ -327,9 +324,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
   private _pushMSGHandler(rawMsg: any) {
     let pushMsg: string = ''
     pushMsg += `# bilive_client 挂机情况报告\n`
-    let startTime = new Date()
-    startTime.setTime(this.listenStatus.startTime)
-    pushMsg += `- 本次挂机开始于 ${startTime}\n`
+    pushMsg += `- 本次挂机开始于 ${new Date(this.listenStatus.startTime).toString()}\n`
     pushMsg += `- 共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})\n`
     pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})\n`
     pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})\n`
@@ -338,8 +333,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
-        if (r && s) return '已封禁|风暴黑屋'
-        else if (r && !s) return '已封禁'
+        if (r) return '已封禁'
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)

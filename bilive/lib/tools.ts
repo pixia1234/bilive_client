@@ -134,7 +134,7 @@ function Hash(algorithm: string, data: string | Buffer): string {
  */
 function Log(...message: any[]) {
   const log = util.format(`${new Date().toString().slice(4, 24)} :`, ...message)
-  if (logs.data.length > 800) logs.data.shift()
+  if (logs.data.length > 1000) logs.data.shift()
   if (typeof logs.onLog === 'function') logs.onLog(log)
   logs.data.push(log)
   console.log(log)
