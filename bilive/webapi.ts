@@ -141,7 +141,6 @@ class WebAPI extends EventEmitter {
       // 保存设置
       case 'setConfig': {
         const config = Options._.config
-        const serverURL = config.serverURL
         const setConfig = <config>message.data || {}
         let msg = ''
         for (const i in config) {
@@ -156,7 +155,6 @@ class WebAPI extends EventEmitter {
           for (const i in config) config[i] = setConfig[i]
           Options.save()
           this._Send({ cmd, ts, data: config })
-          if (serverURL !== config.serverURL) Options.emit('clientUpdate')
         }
         else this._Send({ cmd, ts, msg, data: config })
       }
