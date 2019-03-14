@@ -50,7 +50,7 @@ class Raffle extends EventEmitter {
    */
   public async Start() {
     const { roomID } = this._raffleMessage
-    await tools.XHR({
+    if (this._raffleMessage.cmd !== 'beatStorm') await tools.XHR({
       method: 'POST',
       uri: `https://api.live.bilibili.com/room/v1/Room/room_entry_action`,
       body: `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
@@ -188,8 +188,11 @@ class Raffle extends EventEmitter {
     if (<number[]>Options._.advConfig.stormSetting === undefined) return
     for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1]; i++) {
       let joinStorm = await tools.XHR<joinStorm>(join, 'Android')
-      if (joinStorm === undefined) return
-      if (joinStorm.response.statusCode !== 200) return tools.Log(this._user.nickname, title, id, joinStorm.response.statusCode)
+      if (joinStorm === undefined) break
+      if (joinStorm.response.statusCode !== 200) {
+        tools.Log(this._user.nickname, title, id, joinStorm.response.statusCode)
+        break
+      }
       if (joinStorm.body.code === 0) {
         const content = joinStorm.body.data
         if (content !== undefined && content.gift_num > 0) {
@@ -198,17 +201,17 @@ class Raffle extends EventEmitter {
             cmd: 'earn',
             data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
           })
-          return
+          break
         }
       }
       else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
-      if (joinStorm.body.msg === '已经领取奖励') return
+      if (joinStorm.body.msg === '已经领取奖励') break
       else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
         this.emit('msg', {
           cmd: 'ban',
           data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
         })
-        return
+        break
       }
       await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }

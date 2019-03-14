@@ -12,11 +12,11 @@ class Raffle extends Plugin {
   public loaded = false
   // 是否开启抽奖
   private _raffle = false
-  // 封禁列表
+  // 普通/风暴封禁列表
   private _raffleBanList: Map<string, boolean> = new Map()
   private _stormBanList: Map<string, boolean> = new Map()
-  // 限制列表
-  private _stormNum: any = {}
+  // 风暴限制列表
+  private _stormEarn: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 抽奖暂停
     defaultOptions.config['rafflePause'] = []
@@ -43,10 +43,10 @@ class Raffle extends Plugin {
     }
     whiteList.add('raffleDelay')
      // beatStorm类抽奖的全局延迟
-    defaultOptions.advConfig['beatStormDelay'] = 50
+    defaultOptions.advConfig['beatStormDelay'] = 20
     defaultOptions.info['beatStormDelay'] = {
       description: 'beatStorm延迟',
-      tip: '节奏风暴抽奖的全局延迟，单位为毫秒(ms)，默认为50',
+      tip: '节奏风暴抽奖的全局延迟，单位为毫秒(ms)，默认为20',
       type: 'number'
     }
     whiteList.add('beatStormDelay')
@@ -101,8 +101,8 @@ class Raffle extends Plugin {
     // beatStorm限制
     defaultOptions.newUserData['beatStormLimit'] = 50
     defaultOptions.info['beatStormLimit'] = {
-      description: 'beatStorm限制',
-      tip: '每日领取beatStorm类抽奖奖励的限制',
+      description: '风暴限制',
+      tip: '每日领取节奏风暴类抽奖奖励的限制',
       type: 'number'
     }
     whiteList.add('beatStormLimit')
@@ -110,7 +110,7 @@ class Raffle extends Plugin {
   }
   private async _refreshCount(users: Map<string, User>) {
     users.forEach(user => {
-      this._stormNum[user.uid] = 0
+      this._stormEarn[user.uid] = 0
     })
   }
   public async start({ users }: { users: Map<string, User> }) {
@@ -138,7 +138,7 @@ class Raffle extends Plugin {
         if (user.captchaJPEG !== '' || !user.userData[message.cmd]) return
         if (this._raffleBanList.get(uid)) return
         if (this._stormBanList.get(uid) && message.cmd === 'beatStorm') return
-        if (this._stormNum[uid] !== undefined && message.cmd === 'beatStorm' && this._stormNum[uid] >= <number>user.userData['beatStormLimit']) return
+        if (this._stormEarn[uid] !== undefined && message.cmd === 'beatStorm' && this._stormEarn[uid] >= <number>user.userData['beatStormLimit']) return
         const droprate = message.cmd === 'beatStorm' ? <number>options.advConfig['beatStormDrop'] : <number>options.advConfig['raffleDrop']
         if (droprate !== 0 && Math.random() < droprate / 100) tools.Log(user.nickname, '丢弃抽奖', message.id)
         else {
@@ -151,7 +151,7 @@ class Raffle extends Plugin {
                 if (msg.data.type === 'raffle') this._raffleBanList.set(msg.data.uid, true)
                 else this._stormBanList.set(msg.data.uid, true)
               }
-              if (msg.cmd === 'earn' && msg.data.type === 'beatStorm') this._stormNum[uid]++
+              if (msg.cmd === 'earn' && msg.data.type === 'beatStorm') this._stormEarn[uid]++
               this.emit('msg', msg)
             })
             .Start()

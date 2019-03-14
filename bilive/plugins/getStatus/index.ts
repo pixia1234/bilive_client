@@ -307,9 +307,11 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       raffle = function() {
         let tmp: string = '\n本次挂机，此账号共获得奖励：\n'
-        user.earnData.total.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        if (user.earnData.total.length > 0) user.earnData.total.forEach((earn: any) => tmp += `  ${earn.name} x${earn.num}\n`)
+        else tmp += '  无\n'
         tmp += '今日收益：\n'
-        user.earnData.today.forEach((earn: any) => tmp += `${earn.name} x${earn.num}\n`)
+        if (user.earnData.today.length > 0) user.earnData.today.forEach((earn: any) => tmp += `  ${earn.name} x${earn.num}\n`)
+        else tmp += '  无\n'
         return tmp
       }()
       logMsg += line + live + '\n' + medal + bagDiv + bag + '\n' + raffle + '\n'
@@ -380,9 +382,11 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       raffle = function() {
         let tmp: string = '## 抽奖情况\n'
         tmp += `### 共获得奖励：\n`
-        user.earnData.total.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        if (user.earnData.total.length) user.earnData.total.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        else tmp += '- 无\n'
         tmp += `### 今日收益：\n`
-        user.earnData.today.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        if (user.earnData.today.length) user.earnData.today.forEach((earn: any) => tmp += `- ${earn.name} x${earn.num}\n`)
+        else tmp += '- 无\n'
         return tmp
       }()
       pushMsg += '\n---\n' + line + '\n---\n' + live + '\n---\n' + medal + '\n---\n' + bag + '\n---\n' + raffle + '\n---\n'
