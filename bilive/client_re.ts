@@ -20,7 +20,7 @@ class ClientRE extends Client {
     this.on('close', () => this._ClientReConnect())
   }
   /**
-   * 重连次数, 以五次为阈值
+   * 重连次数, 以十次为阈值
    *
    * @type {number}
    * @memberof ClientRE
@@ -52,8 +52,8 @@ class ClientRE extends Client {
   private _ClientReConnect() {
     if (this._update) this._update = false
     else {
-      this._Timer = setTimeout(() => {
-        if (this.reConnectTime >= 5) {
+      this._Timer = setTimeout(async () => {
+        if (this.reConnectTime >= 10) {
           this.reConnectTime = 0
           this._DelayReConnect()
         }
@@ -61,6 +61,7 @@ class ClientRE extends Client {
           this.reConnectTime++
           this.Connect()
         }
+        await tools.Sleep(2 * 1000)
       }, 10 * 1000)
     }
   }
@@ -71,8 +72,8 @@ class ClientRE extends Client {
    * @memberof ClientRE
    */
   private _DelayReConnect() {
-    this._Timer = setTimeout(() => this.Connect(), 5 * 60 * 1000)
-    tools.ErrorLog('尝试重连服务器失败，五分钟后再次重新连接')
+    this._Timer = setTimeout(() => this.Connect(), 60 * 1000)
+    tools.ErrorLog('尝试重连服务器失败，一分钟后再次重新连接')
   }
 }
 export default ClientRE
