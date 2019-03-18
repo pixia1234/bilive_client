@@ -76,7 +76,8 @@ class MainSite extends Plugin {
       }
       const getSummitVideo = await tools.XHR<getSummitVideo>(summitVideo)
       if (getSummitVideo === undefined || getSummitVideo.response.statusCode !== 200) continue
-      else if (getSummitVideo.body.data.vlist === undefined || getSummitVideo.body.data.vlist.length === 0) continue
+      else if (getSummitVideo.body.data === undefined || getSummitVideo.body.data === null) continue
+      else if (getSummitVideo.body.data.vlist.length === 0) continue
       else getSummitVideo.body.data.vlist.forEach(item => { aids.push(item.aid) })
       await tools.Sleep(3 * 1000)
     }
