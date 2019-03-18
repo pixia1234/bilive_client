@@ -61,7 +61,7 @@ class ClientRE extends Client {
           this.reConnectTime++
           this.Connect()
         }
-        await tools.Sleep(2 * 1000)
+        await tools.Sleep(1000)
       }, 10 * 1000)
     }
   }
@@ -73,7 +73,7 @@ class ClientRE extends Client {
    */
   private _DelayReConnect() {
     this._Timer = setTimeout(() => this.Connect(), 60 * 1000)
-    tools.ErrorLog('尝试重连服务器失败，一分钟后再次重新连接')
+    tools.ErrorLog('重连ws服务器失败，一分钟后继续尝试')
   }
 }
 export default ClientRE

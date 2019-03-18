@@ -17,6 +17,13 @@ class Raffle extends Plugin {
   private _stormBanList: Map<string, boolean> = new Map()
   // 风暴限制列表
   private _stormEarn: any = {}
+  /**
+   * raffle时间
+   * 
+   * @private
+   * @param param0 
+   */
+  private _lastRaffleTime: number = Date.now()
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 抽奖暂停
     defaultOptions.config['rafflePause'] = []
@@ -134,6 +141,7 @@ class Raffle extends Plugin {
   }
   public async msg({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
     if (this._raffle) {
+      if (message.cmd !== 'beatStorm' && Date.now() - this._lastRaffleTime < 500) await tools.Sleep(500)
       users.forEach(async (user, uid) => {
         if (user.captchaJPEG !== '' || !user.userData[message.cmd]) return
         if (this._raffleBanList.get(uid)) return
@@ -156,7 +164,9 @@ class Raffle extends Plugin {
             })
             .Start()
         }
+        if (message.cmd !== 'beatStorm') await tools.Sleep(300)
       })
+      if (message.cmd !== 'beatStorm') this._lastRaffleTime = Date.now()
     }
   }
 }

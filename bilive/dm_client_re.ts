@@ -32,7 +32,7 @@ class DMclientRE extends DMclient {
    * @memberof DMclientRE
    */
   private _ClientReConnect() {
-    this._Timer = setTimeout(() => {
+    this._Timer = setTimeout(async () => {
       if (this.reConnectTime >= 15) {
         this.reConnectTime = 0
         this._DelayReConnect()
@@ -41,6 +41,7 @@ class DMclientRE extends DMclient {
         this.reConnectTime++
         this.Connect({ server: this._server, port: this.port })
       }
+      await tools.Sleep(1000)
     }, 3 * 1000)
   }
   /**
@@ -51,7 +52,7 @@ class DMclientRE extends DMclient {
    */
   private _DelayReConnect() {
     this._Timer = setTimeout(() => this.Connect(), 60 * 1000)
-    tools.ErrorLog('尝试重连弹幕服务器失败，一分钟后再次重新连接')
+    tools.ErrorLog('重连弹幕服务器失败，一分钟后继续尝试')
   }
 }
 export default DMclientRE
