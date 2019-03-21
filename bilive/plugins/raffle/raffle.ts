@@ -119,12 +119,8 @@ class Raffle extends EventEmitter {
           }
         }
         else tools.Log(this._user.nickname, title, id, raffleAward.body)
-        if (raffleAward.body.code === 400 && raffleAward.body.msg === '访问被拒绝') {
-          this.emit('msg', {
-            cmd: 'ban',
-            data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname }
-          })
-        }
+        if (raffleAward.body.msg === '访问被拒绝') 
+          this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
       }
     })
   }
@@ -161,12 +157,8 @@ class Raffle extends EventEmitter {
           tools.Log(this._user.nickname, title, id, data.message)
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
-        if (lotteryReward.body.code === 400 && lotteryReward.body.msg === '访问被拒绝') {
-          this.emit('msg', {
-            cmd: 'ban',
-            data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname }
-          })
-        }
+        if (lotteryReward.body.msg === '访问被拒绝') 
+          this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
       }
     })
   }
@@ -206,38 +198,15 @@ class Raffle extends EventEmitter {
       }
       else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
       if (joinStorm.body.msg === '已经领取奖励') break
-      else if (joinStorm.body.code === 400 && joinStorm.body.msg === '访问被拒绝') {
-        this.emit('msg', {
-          cmd: 'ban',
-          data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname }
-        })
+      else if (joinStorm.body.msg === '访问被拒绝') {
+        this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname } })
         break
       }
       await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }
   }
 }
-/**
-* 参与抽奖信息
-*
-* @interface raffleJoin
-*/
-// @ts-ignore
-interface raffleJoin {
-  code: number
-  msg: string
-  message: string
-  data: raffleJoinData
-}
-interface raffleJoinData {
-  face?: string
-  from: string
-  type: 'small_tv' | string
-  roomid?: string
-  raffleId: number | string
-  time: number
-  status: number
-}
+
 /**
  * 抽奖结果信息
  *

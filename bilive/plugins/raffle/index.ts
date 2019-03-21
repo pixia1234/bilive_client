@@ -11,7 +11,7 @@ class Raffle extends Plugin {
   public author = 'Vector000'
   public loaded = false
   // 是否开启抽奖
-  private _raffle = false
+  private _raffle = true
   // 普通/风暴封禁列表
   private _raffleBanList: Map<string, boolean> = new Map()
   private _stormBanList: Map<string, boolean> = new Map()
