@@ -1,5 +1,6 @@
 import { Options as requestOptions } from 'request'
 import Plugin, { tools, AppClient } from '../../plugin'
+import Options from '../../options'
 
 class GetStatus extends Plugin {
   constructor() {
@@ -7,7 +8,7 @@ class GetStatus extends Plugin {
   }
   public name = '运行统计'
   public description = '定时log并推送运行统计数据'
-  public version = '0.0.7'
+  public version = '0.0.8'
   public author = 'Vector000'
   // 监听状态
   private listenStatus: any = {
@@ -32,20 +33,23 @@ class GetStatus extends Plugin {
   // 抽奖统计(Daily, 只统计当前0点开始的获奖量)
   private _todayRaffleStatus: any = {}
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
-    defaultOptions.config['getStatus'] = 4
+    defaultOptions.config['getStatus'] = 6
     defaultOptions.info['getStatus'] = {
       description: '查看挂机状态',
-      tip: '定时log并推送运行状态数据，若留空，则表示不推送',
+      tip: '定时log并推送运行状态数据。输入一整数，表示每隔N小时推送一次，若为0，则表示不推送',
       type: 'number'
     }
     whiteList.add('getStatus')
+    defaultOptions.newUserData['raffleBan'] = false
+    defaultOptions.newUserData['beatStormBan'] = false
+    whiteList.add('raffleBan')
+    whiteList.add('beatStormBan')
     this.loaded = true
   }
   public async start({ users }: { users: Map<string, User> }) {
+    this._loadBanStatus(users)
     this._clearStatus(this._raffleStatus, users)
     this._clearStatus(this._todayRaffleStatus, users)
-    this._raffleBanList.clear()
-    this._stormBanList.clear()
     this.listenStatus.startTime = Date.now()
     this._getStatus(users, false)
   }
@@ -58,59 +62,100 @@ class GetStatus extends Plugin {
     }
     let time = <number>options.config.getStatus
     if (cstMin === 59) this._getStatus(users, false)
-    if (cstMin === 59 && (cstHour + 1) % time === 0) this._getStatus(users, true)
+    if (time > 0 && cstMin === 59 && (cstHour + 1) % time === 0) this._getStatus(users, true)
   }
   public async msg({ message }: { message: raffleMessage | lotteryMessage | beatStormMessage }) {
     this.listenStatus[message.cmd]++
     this.todayListenStatus[message.cmd]++
   }
-  public async notify({ msg }: { msg: pluginNotify }) {
+  public async notify({ msg, users }: { msg: pluginNotify, users: Map<string, User> }) {
     let data = msg.data
+    let user = <User>users.get(msg.data.uid)
     if (msg.cmd === 'ban') {
-      if (msg.data.type === 'raffle') {
-        if (!this._raffleBanList.get(data.uid)) {
-          this._raffleBanList.set(data.uid, true)
-          tools.Log(`${data.nickname}已封禁`)
-          tools.sendSCMSG(`${data.nickname}已封禁`)
-        }
-      }
-      else {
-        if (!this._stormBanList.get(data.uid)) {
-          this._stormBanList.set(data.uid, true)
-          tools.Log(`${data.nickname}风暴已封禁`)
-          tools.sendSCMSG(`${data.nickname}风暴已封禁`)
-        }
-      }
-
+      this._banMSGHandler(data, user)
     }
     if (msg.cmd === 'earn') {
       this._addEarnStatus(this._raffleStatus, data.uid, msg.data)
       this._addEarnStatus(this._todayRaffleStatus, data.uid, msg.data)
-      if (msg.data.type !== 'beatStorm') {
-        if (this._raffleBanList.get(data.uid)) {
-          this._raffleBanList.set(data.uid, false)
-          tools.Log(`${data.nickname}已解除封禁`)
-          tools.sendSCMSG(`${data.nickname}已解除封禁`)
-        }
-      }
-      else {
-        if (this._stormBanList.get(data.uid)) {
-          this._stormBanList.set(data.uid, false)
-          tools.Log(`${data.nickname}已解除风暴封禁`)
-          tools.sendSCMSG(`${data.nickname}已解除风暴封禁`)
-        }
-      }
+      this._unBanMSGHandler(msg.data, user)
     }
+    if (msg.cmd === 'unban') this._unBanMSGHandler(msg.data, user)
   }
   /**
-   * 清除状态缓存
+   * 加载封禁状态到内存
+   *  
+   * @param {Map<string, User>}
+   * @private
+   * @memberof GetStatus
+   */
+  private async _loadBanStatus(users: Map<string, User>) {
+    users.forEach(async (user, uid) => {
+      this._raffleBanList.set(uid, <boolean>user.userData['raffleBan'])
+      this._stormBanList.set(uid, <boolean>user.userData['beatStormBan'])
+    })
+  }
+  /**
+   * 清除/分配状态缓存
    *
+   * @param {any, Map<string, User>}
    * @private
    * @memberof GetStatus
    */
   private async _clearStatus(status: any, users: Map<string, User>) {
     users.forEach(user => { status[user.uid] = { earned: [] } })
-  }    
+  }
+  /**
+   * 处理ban msg
+   * 
+   * @param {any, User}
+   * @private
+   * @memberof GetStatus
+   */
+  private async _banMSGHandler(data: any, user: User) {
+    if (data.type === 'raffle') {
+      if (!this._raffleBanList.get(data.uid)) {
+        this._raffleBanList.set(data.uid, true)
+        tools.Log(`${data.nickname}已封禁`)
+        tools.sendSCMSG(`${data.nickname}已封禁`)
+        user.userData['raffleBan'] = true
+      }
+    }
+    else {
+      if (!this._stormBanList.get(data.uid)) {
+        this._stormBanList.set(data.uid, true)
+        tools.Log(`${data.nickname}风暴已封禁`)
+        tools.sendSCMSG(`${data.nickname}风暴已封禁`)
+        user.userData['beatStormBan'] = true
+      }
+    }
+    Options.save()
+  }
+  /**
+   * 处理unban(earn) msg
+   * 
+   * @param {any, User}
+   * @private
+   * @memberof GetStatus
+   */
+  private async _unBanMSGHandler(data: any, user: User) {
+    if (data.type !== 'beatStorm') {
+      if (this._raffleBanList.get(data.uid)) {
+        this._raffleBanList.set(data.uid, false)
+        tools.Log(`${data.nickname}已解除封禁`)
+        tools.sendSCMSG(`${data.nickname}已解除封禁`)
+        user.userData['raffleBan'] = false
+      }
+    }
+    else {
+      if (this._stormBanList.get(data.uid)) {
+        this._stormBanList.set(data.uid, false)
+        tools.Log(`${data.nickname}已解除风暴封禁`)
+        tools.sendSCMSG(`${data.nickname}已解除风暴封禁`)
+        user.userData['beatStormBan'] = false
+      }
+    }
+    Options.save()
+  }
   /**
    * 获取礼物数量+1
    *
@@ -120,11 +165,11 @@ class GetStatus extends Plugin {
   private _addEarnStatus(status: any, uid: string, data: any) {
     let len = status[uid].earned.length
     for (let i = 0; i <= len; i++) {
-      if (i === len) {
+      if (i === len) { // 完成遍历，未发现同名item，作为全新item插入数组
         status[uid].earned.push({ name: data.name, num: data.num })
         break
       }
-      if (data.name === status[uid].earned[i].name) {
+      if (data.name === status[uid].earned[i].name) { // 发现同名item，追加item数量
         status[uid].earned[i].num += data.num
         break
       }
@@ -143,8 +188,8 @@ class GetStatus extends Plugin {
       let tmp: any = {
         biliUID: user.userData.biliUID,
         nickname: user.nickname,
-        raffleBan: (!this._raffleBanList.get(user.uid) || this._raffleBanList.get(user.uid) === undefined) ? false : true,
-        stormBan: (!this._stormBanList.get(user.uid) || this._stormBanList.get(user.uid) === undefined) ? false : true
+        raffleBan: this._raffleBanList.get(user.uid),
+        stormBan: this._stormBanList.get(user.uid)
       }
       tmp['liveData'] = await this._getLiveInfo(user)
       tmp['medalData'] = await this._getMedalInfo(user)
@@ -161,7 +206,6 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getLiveInfo(user: User) {
-    let result: any = undefined
     const userInfo: requestOptions = {
       uri: `https://api.live.bilibili.com/User/getUserInfo?ts=${AppClient.TS}`,
       json: true,
@@ -169,9 +213,9 @@ class GetStatus extends Plugin {
       headers: user.headers
     }
     const getUserInfo = await tools.XHR<userInfo>(userInfo)
-    if (getUserInfo === undefined || getUserInfo.response.statusCode !== 200) result = false
-    else if (getUserInfo.body.code === 'REPONSE_OK') result = getUserInfo.body.data
-    return result
+    if (getUserInfo === undefined || getUserInfo.response.statusCode !== 200) return false
+    if (getUserInfo.body.code === 'REPONSE_OK') return getUserInfo.body.data
+    else return false
   }
   /**
    * 获取medalInfo
@@ -179,7 +223,6 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getMedalInfo(user: User) {
-    let result: any = undefined
     const medalInfo: requestOptions = {
       uri: `https://api.live.bilibili.com/i/api/medal?page=1&pageSize=25`,
       json: true,
@@ -187,23 +230,28 @@ class GetStatus extends Plugin {
       headers: user.headers
     }
     const getMedalInfo = await tools.XHR<medalInfo>(medalInfo)
-    if (getMedalInfo === undefined) result = false
+    if (getMedalInfo === undefined) return false
     else {
-      if (getMedalInfo.response.statusCode === 200 && getMedalInfo.body.code === 0) {
+      if (getMedalInfo.body.code === 0) {
         const medalData = getMedalInfo.body.data
-        if (medalData.count === 0) result = 0
+        if (medalData.count === 0) return 0 // 无勋章
         else {
-          let medalNum = 0
-          medalData.fansMedalList.forEach(medal => {
-            if (medal.status === 1) result = medal
-            else medalNum++
-          })
-          if (medalNum === medalData.count) result = -1
+          let medal: any
+          for (let i = 0; i <= medalData.fansMedalList.length; i++) {
+            if (i === medalData.fansMedalList.length) {
+              medal = -1 // 完成遍历，未发现有佩戴勋章
+              break
+            }
+            if (medalData.fansMedalList[i].status === 1) {
+              medal = medalData.fansMedalList[i] // 佩戴了勋章
+              break
+            }
+          }
+          return medal
         }
       }
-      else result = false
+      else return false // 获取勋章信息失败
     }
-    return result
   }
   /**
    * 获取bagInfo
@@ -211,16 +259,14 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getBagInfo(user: User) {
-    let result: any = undefined
     const bag: requestOptions = {
       uri: `https://api.live.bilibili.com/gift/v2/gift/m_bag_list?${AppClient.signQueryBase(user.tokenQuery)}`,
       json: true,
       headers: user.headers
     }
     const bagInfo = await tools.XHR<bagInfo>(bag, 'Android')
-    if (bagInfo === undefined || bagInfo.response.statusCode !== 200 || bagInfo.body.code !== 0) result = false
-    else result = bagInfo.body.data
-    return result
+    if (bagInfo === undefined || bagInfo.response.statusCode !== 200 || bagInfo.body.code !== 0) return false
+    else return bagInfo.body.data
   }
   /**
    * 已获取奖励
@@ -228,13 +274,10 @@ class GetStatus extends Plugin {
    * @memberof GetStatus
    */
   private async _getEarnInfo(user: User) {
-    let earnData: any = {
-      total: {},
-      today: {}
+    return {
+      total: this._raffleStatus[user.uid].earned,
+      today: this._todayRaffleStatus[user.uid].earned
     }
-    earnData.total = this._raffleStatus[user.uid].earned
-    earnData.today = this._todayRaffleStatus[user.uid].earned
-    return earnData
   }
   /**
    * 处理logMSG
@@ -255,8 +298,8 @@ class GetStatus extends Plugin {
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
-        if (r && s) return '已封禁'
-        else if (!r && s) return '风暴黑屋'
+        if (r === true) return '已封禁'
+        else if (r === false && s === true) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
       line = `\n/************************************ 用户 ${user.nickname} 信息 ************************************/\n`
@@ -275,7 +318,7 @@ LV${user.liveData.user_level} (${user.liveData.user_intimacy}/${user.liveData.us
       }()
       let medalDiv: string = '\n\n-------------------------- 佩戴勋章信息 --------------------------\n'
       medal = function() {
-        if (!user.medalData || user.medalData === undefined) return (`勋章信息获取失败`)
+        if (user.medalData === false || user.medalData === undefined) return (`勋章信息获取失败`)
         else if (user.medalData === -1) return (`未佩戴勋章`)
         else if (user.medalData === 0) return (`无勋章`)
         else {
@@ -335,8 +378,8 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       let line, live, medal, bag, raffle: string = ''
       let user = rawMsg[uid]
       let ban: string = function(r: boolean, s: boolean) {
-        if (r) return '已封禁'
-        else if (!r && s) return '风暴黑屋'
+        if (r === true) return '已封禁'
+        else if (r === false && s === true) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
       line = `# 用户 *****${user.nickname}***** 信息\n`
@@ -354,7 +397,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         }
       }()
       medal = function() {
-        if (!user.medalData || user.medalData === undefined) return (`## 勋章信息获取失败\n`)
+        if (user.medalData === false || user.medalData === undefined) return (`## 勋章信息获取失败\n`)
         else if (user.medalData === -1) return (`## 未佩戴勋章\n`)
         else if (user.medalData === 0) return (`## 无勋章\n`)
         else {

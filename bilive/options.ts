@@ -12,18 +12,18 @@ class Options extends EventEmitter {
   constructor() {
     super()
     // 根据npm start参数不同设置不同路径
-    this._dirname = __dirname + (process.env.npm_package_scripts_start === 'node build/app.js' ? '/../..' : '/..')
+    this._dirname = __dirname + (process.env.npm_package_scripts_start === 'tsc-watch --onSuccess \"node build/app.js\"' ? '/../' : '')
     // 检查是否有options目录
-    const hasDir = fs.existsSync(this._dirname + '/options/')
-    if (!hasDir) fs.mkdirSync(this._dirname + '/options/')
+    const hasDir = fs.existsSync(this._dirname + 'options/')
+    if (!hasDir) fs.mkdirSync(this._dirname + 'options/')
     // 读取默认设置文件
-    const defaultOptionBuffer = fs.readFileSync(this._dirname + '/bilive/options.default.json')
+    const defaultOptionBuffer = fs.readFileSync(this._dirname + 'build/options.default.json')
     this._ = <options>JSON.parse(defaultOptionBuffer.toString())
     // 复制默认设置文件到用户设置文件
-    const hasFile = fs.existsSync(this._dirname + '/options/options.json')
-    if (!hasFile) fs.copyFileSync(this._dirname + '/bilive/options.default.json', this._dirname + '/options/options.json')
+    const hasFile = fs.existsSync(this._dirname + 'options/options.json')
+    if (!hasFile) fs.copyFileSync(this._dirname + 'build/options.default.json', this._dirname + 'options/options.json')
     // 读取用户设置文件
-    const userOptionBuffer = fs.readFileSync(this._dirname + '/options/options.json')
+    const userOptionBuffer = fs.readFileSync(this._dirname + 'options/options.json')
     this._userOption = <options>JSON.parse(userOptionBuffer.toString())
     if (this._ === undefined || this._userOption === undefined) throw new TypeError('文件格式化失败')
   }
@@ -66,6 +66,7 @@ class Options extends EventEmitter {
     'localListener',
     'defaultUserID',
     'serverURL',
+    'bakServerURL',
     'eventRooms',
     'adminServerChan',
     'user',

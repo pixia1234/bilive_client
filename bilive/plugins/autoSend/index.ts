@@ -50,7 +50,7 @@ class AutoSend extends Plugin {
         const day_limit = wearInfo.body.data.day_limit
         const today_feed = parseInt(wearInfo.body.data.today_feed)
         let intimacy_needed = day_limit - today_feed
-        if (intimacy_needed === 0) return tools.Log(user.nickname, `亲密度已达上限`)
+        if (intimacy_needed === 0) return tools.Log(user.nickname, `今日亲密度已达上限`)
         // 获取包裹信息
         const bag: requestOptions = {
           uri: `https://api.live.bilibili.com/gift/v2/gift/m_bag_list?${AppClient.signQueryBase(user.tokenQuery)}`,
@@ -64,7 +64,8 @@ class AutoSend extends Plugin {
             for (const giftData of bagInfo.body.data) {
               if (giftData.expireat > 0) {
                 let gift_value = 0
-                switch (giftData.gift_id) { // Gift_Config from http://api.live.bilibili.com/gift/v3/live/gift_config
+                // Gift_Config from http://api.live.bilibili.com/gift/v3/live/gift_config
+                switch (giftData.gift_id) {
                   case 1: gift_value = 1 //辣条
                     break
                   case 3: gift_value = 99 //B坷垃
@@ -98,7 +99,7 @@ class AutoSend extends Plugin {
                     if (intimacy_needed === 0) return tools.Log(user.nickname, `亲密度已达上限`)
                   }
                   else tools.Log(user.nickname, '自动送礼V2', `向房间 ${room_id} 赠送 ${send_num} 个${giftData.gift_name} 失败`, sendBag.body)
-                  await tools.Sleep(5 * 1000)
+                  await tools.Sleep(3 * 1000)
                 }
               }
             }

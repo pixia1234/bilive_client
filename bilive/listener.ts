@@ -23,10 +23,26 @@ class Listener extends EventEmitter {
    */
   private _DMclient: Map<number, DMclient> = new Map()
   /**
-   * 记录缓存
+   * 主WS服务器
    *
    * @private
-   * @type {Map<number, number>}
+   * @type {Client}
+   * @memberof Listener
+   */
+  private _MainWSServer: Client = new Client('','')
+  /**
+   * 备用WS服务器
+   *
+   * @private
+   * @type {Client}
+   * @memberof Listener
+   */
+  private _BackupWSServer: Client = new Client('','')
+  /**
+   * 抽奖ID记录缓存
+   *
+   * @private
+   * @type {Set<number>}
    * @memberof Listener
    */
   private _smallTVID: Set<number> = new Set()
@@ -51,11 +67,18 @@ class Listener extends EventEmitter {
    */
   public Start() {
     if (Options._.config.localListener) this.updateAreaRoom()
-    const { 0: server, 1: protocol } = Options._.advConfig.serverURL.split('#')
-    if (server !== undefined && protocol !== undefined) this._RoomListener(server, protocol)
-    else tools.Log('未发现云监听服务器')
+    this.connectWSServer()
     // 3s清空一次消息缓存
     this._loop = setInterval(() => this._MSGCache.clear(), 3 * 1000)
+  }
+  /**
+   * 更新分区房间
+   *
+   * @memberof Listener
+   */
+  private connectWSServer() {
+    this._RoomListener()
+    this._BAKRoomListener()
   }
   /**
    * 更新分区房间
@@ -112,21 +135,41 @@ class Listener extends EventEmitter {
    * 房间监听
    *
    * @private
-   * @param {string} server
-   * @param {string} protocol
    * @memberof Listener
    */
-  private _RoomListener(server: string, protocol: string) {
-    const client = new Client(server, protocol)
-    client
-      .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
-      .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
-      .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
-      .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
-      .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
-      .Connect()
-    tools.Log(`已连接到 ${Options._.advConfig.serverURL}`)
-    Options.on('clientUpdate', () => client.Update())
+  private _RoomListener() {
+    const { 0: server, 1: protocol } = Options._.advConfig.serverURL.split('#')
+    if (server !== undefined && protocol !== undefined) {
+      this._MainWSServer = new Client(server, protocol)
+      this._MainWSServer
+        .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+        .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+        .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+        .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
+        .on('sysmsg', (systemMessage: systemMessage) => tools.Log('主服务器消息:', systemMessage.msg))
+        .Connect()
+      tools.Log(`已连接到 ${Options._.advConfig.serverURL}`)
+    }
+    Options.on('clientUpdate', () => this._MainWSServer.Update(Options._.advConfig.serverURL))
+  }
+  /**
+   * 房间监听(备用线路)
+   *
+   * @private
+   * @memberof Listener
+   */
+  private _BAKRoomListener() {
+    const { 0: server, 1: protocol } = Options._.advConfig.bakServerURL.split('#')
+    if (server !== undefined && protocol !== undefined) {
+      this._BackupWSServer = new Client(server, protocol)
+      this._BackupWSServer
+        .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+        .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
+        .on('sysmsg', (systemMessage: systemMessage) => tools.Log('备用服务器消息:', systemMessage.msg))
+        .Connect()
+      tools.Log(`已连接到备用服务器 ${Options._.advConfig.bakServerURL}`)
+    }
+    Options.on('bakClientUpdate', () => this._BackupWSServer.Update(Options._.advConfig.bakServerURL))
   }
   /**
    * 监听弹幕系统消息

@@ -37,7 +37,7 @@ class BiLive {
     Options.on('newUser', (user: User) => { // 新用户
       this._pluginList.forEach(plugin => { // 运行插件
         if (typeof plugin.start === 'function')
-          plugin.start({ options: Options._, users: new Map([[user.uid, user]]) })
+          plugin.start({ options: Options._, users: new Map([[user.uid, user]]) }, true)
       })
     })
     for (const uid in Options._.user) {
@@ -48,7 +48,7 @@ class BiLive {
     }
     this._pluginList.forEach(plugin => { // 运行插件
       if (typeof plugin.start === 'function')
-        plugin.start({ options: Options._, users: Options.user })
+        plugin.start({ options: Options._, users: Options.user }, false)
     })
     this.loop = setInterval(() => this._loop(), 55 * 1000)
     new WebAPI().Start()
