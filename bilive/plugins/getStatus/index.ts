@@ -7,7 +7,7 @@ class GetStatus extends Plugin {
   }
   public name = '运行统计'
   public description = '定时log并推送运行统计数据'
-  public version = '0.0.6'
+  public version = '0.0.7'
   public author = 'Vector000'
   // 监听状态
   private listenStatus: any = {
@@ -259,33 +259,33 @@ class GetStatus extends Plugin {
         else if (!r && s) return '风暴黑屋'
         else return '未封禁'
       }(user.raffleBan, user.stormBan)
-      line = `\n/****************************** 用户 ${user.nickname} 信息 ******************************/\n`
+      line = `\n/************************************ 用户 ${user.nickname} 信息 ************************************/\n`
       live = function() {
         if (!user.liveData || user.liveData === undefined) return (`用户信息获取失败`)
         else {
-          let vip: string = ''
-          if (user.vip === 0) vip = '不是老爷'
-          else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
-          else if (user.svip === 1) vip = '年费老爷'
-          return (`ID：${user.liveData.uname}  LV${user.liveData.user_level}  \
-EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} \
-(${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%)  \
+          let vip: string = '普通用户'
+          if (user.liveData.vip === 1 && user.liveData.svip === 0) vip = '月费老爷'
+          else if (user.liveData.svip === 1) vip = '年费老爷'
+          return (`ID：${user.liveData.uname}  ${vip}  \
+LV${user.liveData.user_level} (${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy})\
+[${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%]  \
 排名：${user.liveData.user_level_rank}\n金瓜子：${user.liveData.gold}  \
-银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${ban}  ${vip}`)
+银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}  当前状态：${ban}`)
         }
       }()
+      let medalDiv: string = '\n\n-------------------------- 佩戴勋章信息 --------------------------\n'
       medal = function() {
         if (!user.medalData || user.medalData === undefined) return (`勋章信息获取失败`)
         else if (user.medalData === -1) return (`未佩戴勋章`)
         else if (user.medalData === 0) return (`无勋章`)
         else {
-          return (`勋章：${user.medalData.medal_name}${user.medalData.level}  \
+          return (`[${user.medalData.medal_name}]${user.medalData.level}   \
 EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
-(${Math.floor(user.medalData.intimacy / user.medalData.next_intimacy * 100)}%)  \
+(${Math.floor(user.medalData.intimacy / user.medalData.next_intimacy * 100)}%)   \
 排名：${user.medalData.rank}`)
         }
       }()
-      let bagDiv: string = '\n\n-------------------------- 包裹信息 --------------------------\n'
+      let bagDiv: string = '\n\n---------------------------- 包裹信息 ----------------------------\n'
       bag = function() {
         if (!user.bagData || user.bagData === undefined) return (`包裹信息获取失败`)
         else if (user.bagData.length === 0) return (`包裹空空的`)
@@ -314,7 +314,7 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         else tmp += '  无\n'
         return tmp
       }()
-      logMsg += line + live + '\n' + medal + bagDiv + bag + '\n' + raffle + '\n'
+      logMsg += line + live + medalDiv + medal + bagDiv + bag + '\n' + raffle + '\n'
     }
     tools.Log(logMsg)
   }
@@ -343,13 +343,14 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       live = function() {
         if (!user.liveData || user.liveData === undefined) return (`## 用户信息获取失败\n`)
         else {
-          let vip: string = ''
-          if (user.vip === 0) vip = '不是老爷'
-          else if (user.vip === 1 && user.svip === 0) vip = '月费老爷'
-          else if (user.svip === 1) vip = '年费老爷'
-          return (`## 用户信息\n- ID：${user.liveData.uname} LV${user.liveData.user_level}  ${vip}  当前状态：${ban}\n
-- EXP：${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy} (${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%) \
-排名：${user.liveData.user_level_rank}\n- 金瓜子：${user.liveData.gold}  银瓜子：${user.liveData.silver}  硬币：${user.liveData.billCoin}\n`)
+          let vip: string = '普通用户'
+          if (user.liveData.vip === 1 && user.liveData.svip === 0) vip = '月费老爷'
+          else if (user.liveData.svip === 1) vip = '年费老爷'
+          return (`## 用户信息\n- ID：${user.liveData.uname} ${vip} 当前状态：${ban}\n
+- LV${user.liveData.user_level} (${user.liveData.user_intimacy}/${user.liveData.user_next_intimacy}) \
+[${Math.floor(user.liveData.user_intimacy / user.liveData.user_next_intimacy * 100)}%]\
+排名：${user.liveData.user_level_rank}\n\
+- 金瓜子：${user.liveData.gold} 银瓜子：${user.liveData.silver} 硬币：${user.liveData.billCoin}\n`)
         }
       }()
       medal = function() {
@@ -357,15 +358,18 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
         else if (user.medalData === -1) return (`## 未佩戴勋章\n`)
         else if (user.medalData === 0) return (`## 无勋章\n`)
         else {
-          return (`## 勋章信息\n- 勋章：${user.medalData.medal_name}${user.medalData.level} EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
-(${Math.floor(user.medalData.intimacy / user.medalData.next_intimacy * 100)}%) 排名：${user.medalData.rank}\n`)
+          return (`## 佩戴勋章信息\n- [${user.medalData.medal_name}]${user.medalData.level}\n\
+- 获取时间：${user.medalData.receive_time}\n\
+- EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} (${Math.floor(user.medalData.intimacy / user.medalData.next_intimacy * 100)}%) \
+排名：${user.medalData.rank}\n`)
         }
       }()
       bag = function() {
         if (!user.bagData || user.bagData === undefined) return (`## 包裹信息获取失败\n`)
         else if (user.bagData.length === 0) return (`## 包裹空空的\n`)
         else {
-          let tmp: string = '## 包裹信息\n名称|数量|有效期\n---|:--:|---:\n'
+          let tmp: string = '## 包裹信息\n名称|数量|有效期|名称|数量|有效期|名称|数量|有效期\n'
+          tmp += ':-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:\n'
           for (let i = 0; i < user.bagData.length; i++) {
             let giftItem = user.bagData[i]
             let expireStr: string = ''
@@ -374,7 +378,9 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
             else if (expire / 3600 < 1) expireStr = `${(expire / 60).toFixed(1)}分钟`
             else if (expire / (24 * 3600) < 1) expireStr = `${(expire / 3600).toFixed(1)}小时`
             else expireStr = `${(expire / 24 / 3600).toFixed(1)}天`
-            tmp += `${giftItem.gift_name}|${giftItem.gift_num}|${expireStr}\n`
+            if ((i + 1) % 3 === 1) tmp += `${giftItem.gift_name}|${giftItem.gift_num}|${expireStr}`
+            else if ((i + 1) % 3 === 2) tmp += `|${giftItem.gift_name}|${giftItem.gift_num}|${expireStr}`
+            else tmp += `|${giftItem.gift_name}|${giftItem.gift_num}|${expireStr}\n`
           }
           return (tmp)
         }
