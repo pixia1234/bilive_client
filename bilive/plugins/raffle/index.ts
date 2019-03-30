@@ -166,19 +166,18 @@ class Raffle extends Plugin {
    * @returns {number}
    */
   private async _getPriorityLimit(options: options, users: Map<string, User>) {
-    let userPriority: Map<number, string> = new Map()
+    let userPriority: Array<number> = new Array()
     users.forEach(async (user, uid) => {
       if (this._raffleBanList.get(uid) || this._stormBanList.get(uid)) return
       if (!user.userData['beatStorm']) return
       if (this._stormEarn[uid] !== undefined && this._stormEarn[uid] >= <number>user.userData['beatStormLimit']) return
-      userPriority.set(<number>user.userData['beatStormPriority'], uid)
+      userPriority.push(<number>user.userData['beatStormPriority'])
     })
-    let priorityDec = new Map([...userPriority.entries()].sort())
-    let priorityKeysArr = [...priorityDec.keys()]
-    let order = priorityKeysArr.length - <number>options.advConfig['stormUserLimit']
+    let priorityAsc = userPriority.sort()
+    let order = priorityAsc.length - <number>options.advConfig['stormUserLimit']
     if (order < 0) order = 0
-    let priorityKey = priorityKeysArr[order]
-    return priorityKey
+    let priority = priorityAsc[order]
+    return priority
   }
   public async start({ options, users }: { options: options, users: Map<string, User> }) {
     this._refreshCount(users)
