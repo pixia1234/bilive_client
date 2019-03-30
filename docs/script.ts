@@ -317,6 +317,7 @@ function getConfigTemplate(config: config | userData): DocumentFragment {
 function wsClose(data: string) {
   const connectSpan = <HTMLSpanElement>loginDiv.querySelector('#connect span')
   configDiv.innerText = ''
+  advConfigDiv.innerHTML = ''
   logDiv.innerText = ''
   userDiv.innerText = ''
   connectSpan.innerText = data

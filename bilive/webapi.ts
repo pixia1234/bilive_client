@@ -169,6 +169,7 @@ class WebAPI extends EventEmitter {
       case 'setAdvConfig': {
         const config = Options._.advConfig
         const serverURL = config.serverURL
+        const bakServerURL = config.bakServerURL
         const setConfig = <config>message.data || {}
         let msg = ''
         for (const i in config) {
@@ -184,6 +185,7 @@ class WebAPI extends EventEmitter {
           Options.save()
           this._Send({ cmd, ts, data: config })
           if (serverURL !== config.serverURL) Options.emit('clientUpdate')
+          if (bakServerURL !== config.bakServerURL) Options.emit('bakClientUpdate')
         }
         else this._Send({ cmd, ts, msg, data: config })
       }

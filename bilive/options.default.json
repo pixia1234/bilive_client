@@ -12,6 +12,7 @@
   "advConfig": {
     "defaultUserID": 0,
     "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
+    "bakServerURL": "",
     "eventRooms": [
       3
     ]
@@ -40,6 +41,11 @@
     },
     "serverURL": {
       "description": "监听服务器",
+      "tip": "用来监听房间抽奖消息, 格式为server#protocol",
+      "type": "string"
+    },
+    "bakServerURL": {
+      "description": "备用监听服务器",
       "tip": "用来监听房间抽奖消息, 格式为server#protocol",
       "type": "string"
     },

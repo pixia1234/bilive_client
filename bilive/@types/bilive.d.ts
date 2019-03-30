@@ -33,6 +33,7 @@ interface advConfig {
   [index: string]: boolean | number | string | number[]
   defaultUserID: number
   serverURL: string
+  bakServerURL: string
   eventRooms: number[]
 }
 interface userCollection {
@@ -487,7 +488,7 @@ interface IPlugin extends EPlugin {
   author: string
   loaded: boolean
   load?({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }): Promise<void>
-  start?({ options, users }: { options: options, users: Map<string, User> }): Promise<void>
+  start?({ options, users }: { options: options, users: Map<string, User> }, newUser: boolean): Promise<void>
   loop?({ cst, cstMin, cstHour, cstString, options, users }: { cst: Date, cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }): Promise<void>
   msg?({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
   notify?({ msg, options, users }: { msg: pluginNotify, options: options, users: Map<string, User> }): Promise<void>

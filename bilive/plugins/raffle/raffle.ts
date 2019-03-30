@@ -108,6 +108,10 @@ class Raffle extends EventEmitter {
         if (raffleAward.body.code === 0) {
           const gift = raffleAward.body.data
           if (gift.gift_num === 0) tools.Log(this._user.nickname, title, id, raffleAward.body.msg)
+          if (gift.gift_num === undefined) {
+            tools.Log(raffleAward.body)
+            tools.sendSCMSG(raffleAward.body.toString())
+          }
           else {
             const msg = `${this._user.nickname} ${title} ${id} 获得 ${gift.gift_num} 个${gift.gift_name}`
             this.emit('msg', {
@@ -189,19 +193,17 @@ class Raffle extends EventEmitter {
         const content = joinStorm.body.data
         if (content !== undefined && content.gift_num > 0) {
           tools.Log(this._user.nickname, title, id, `第${i}次尝试`, `${content.mobile_content} 获得 ${content.gift_num} 个${content.gift_name}`)
-          this.emit('msg', {
-            cmd: 'earn',
-            data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm', name: content.gift_name, num: content.gift_num }
-          })
+          this.emit('msg', { cmd: 'earn', data: { uid: this._user.uid, nickname: this._user.nickname, type: 'beatStorm', name: content.gift_name, num: content.gift_num } })
           break
         }
       }
-      else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
-      if (joinStorm.body.msg === '已经领取奖励') break
       else if (joinStorm.body.msg === '访问被拒绝') {
         this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname } })
         break
       }
+      else if (joinStorm.body.msg === '已经领取奖励') break
+      else tools.Log(this._user.nickname, title, id, `第${i}次尝试`, joinStorm.body.msg)
+      if (joinStorm.body.msg === '你错过了奖励，下次要更快一点哦~') this.emit('msg', { cmd: 'unban', data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname } })
       await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }
   }

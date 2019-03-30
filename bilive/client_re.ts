@@ -1,6 +1,5 @@
 import tools from './lib/tools'
 import Client from './lib/client'
-import Options from './options'
 /**
  * 客户端, 可自动重连
  *
@@ -30,11 +29,12 @@ class ClientRE extends Client {
   /**
    * 更新服务器地址
    *
+   * @param string
    * @memberof ClientRE
    */
-  public Update() {
+  public Update(url: string) {
     this._update = true
-    const { 0: server, 1: protocol } = Options._.advConfig.serverURL.split('#')
+    const { 0: server, 1: protocol } = url.split('#')
     if (protocol !== undefined && protocol !== '') {
       this._server = server
       this._protocol = protocol
