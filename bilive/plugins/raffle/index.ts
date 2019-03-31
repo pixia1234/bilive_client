@@ -173,7 +173,7 @@ class Raffle extends Plugin {
       if (this._stormEarn[uid] !== undefined && this._stormEarn[uid] >= <number>user.userData['beatStormLimit']) return
       userPriority.push(<number>user.userData['beatStormPriority'])
     })
-    let priorityAsc = userPriority.sort()
+    let priorityAsc = userPriority.sort(function(a, b){return a - b})
     let order = priorityAsc.length - <number>options.advConfig['stormUserLimit']
     if (order < 0) order = 0
     let priority = priorityAsc[order]
