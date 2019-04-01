@@ -13,7 +13,7 @@ function getHeaders(platform: string): request.Headers {
     case 'Android':
       return {
         'Connection': 'Keep-Alive',
-        'User-Agent': 'Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)'
+        'User-Agent': 'Mozilla/5.0 BiliDroid/5.39.1 (bbcallen@gmail.com)'
       }
     default:
       return {
@@ -23,7 +23,7 @@ function getHeaders(platform: string): request.Headers {
         'Cookie': 'l=v',
         'DNT': '1',
         'Origin': liveOrigin,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
       }
   }
 }
