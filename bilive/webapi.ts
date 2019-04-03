@@ -32,11 +32,11 @@ class WebAPI extends EventEmitter {
    * @memberof WebAPI
    */
   private _HttpServer() {
-    // 直接跳转到github.io, 为防以后变更使用302
+    // 直接跳转到coding.me, 为防以后变更使用302
     const server = http.createServer((req, res) => {
       req.on('error', error => tools.ErrorLog('req', error))
       res.on('error', error => tools.ErrorLog('res', error))
-      res.writeHead(302, { 'Location': '//vector000.github.io/bilive_setting/' })
+      res.writeHead(302, { 'Location': '//vector000.coding.me/bilive_setting/' })
       res.end()
     }).on('error', error => tools.ErrorLog('http', error))
     // 监听地址优先支持Unix Domain Socket
