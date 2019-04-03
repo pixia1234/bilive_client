@@ -1,4 +1,4 @@
-import { Options as requestOptions, CookieJar as requestCookieJar } from 'request'
+import { Options as requestOptions } from 'request'
 import Plugin, { tools } from '../../plugin'
 class Task extends Plugin {
   constructor() {
@@ -6,8 +6,8 @@ class Task extends Plugin {
   }
   public name = '日常任务'
   public description = '完成日常任务'
-  public version = '0.0.1'
-  public author = 'lzghzr'
+  public version = '0.0.2'
+  public author = 'Vector000'
   /**
    * 任务表
    *
@@ -46,12 +46,9 @@ class Task extends Plugin {
     users.forEach(async (user, uid) => {
       if (this._taskList.get(uid) || !user.userData['doTask']) return
       const task: requestOptions = {
-        method: 'POST',
-        uri: 'https://api.live.bilibili.com/activity/v1/task/receive_award',
-        body: `task_id=double_watch_task`,
-        jar: <requestCookieJar>user.jar,
-        json: true,
-        headers: { 'Referer': 'https://live.bilibili.com/p/center/index' }
+        uri: 'https://api.live.bilibili.com/activity/v1/task/receive_award?task_id=double_watch_task',
+        jar: user.jar,
+        json: true
       }
       const doubleWatchTask = await tools.XHR<{ code: number }>(task)
       if (doubleWatchTask !== undefined && doubleWatchTask.response.statusCode === 200) {
@@ -65,21 +62,5 @@ class Task extends Plugin {
     })
   }
 }
- /**
- * 日常任务
- *
- * @interface taskInfo
- */
-// @ts-ignore
-interface taskInfo {
-  code: number
-  msg: string
-  data: taskInfoData
-}
-interface taskInfoData {
-  [index: string]: taskInfoDoublewatchinfo
-}
-interface taskInfoDoublewatchinfo {
-  task_id: string | undefined
-}
+
 export default new Task()
