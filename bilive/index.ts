@@ -35,9 +35,9 @@ class BiLive {
     await this._loadPlugin() // 加载插件
     Options.init() // 初始化设置
     Options.on('newUser', (user: User) => { // 新用户
-      this._pluginList.forEach(plugin => { // 运行插件
+      this._pluginList.forEach(async plugin => { // 运行插件
         if (typeof plugin.start === 'function')
-          plugin.start({ options: Options._, users: new Map([[user.uid, user]]) }, true)
+          await plugin.start({ options: Options._, users: new Map([[user.uid, user]]) }, true)
       })
     })
     for (const uid in Options._.user) {
@@ -46,9 +46,9 @@ class BiLive {
       const status = await user.Start()
       if (status !== undefined) user.Stop()
     }
-    this._pluginList.forEach(plugin => { // 运行插件
+    this._pluginList.forEach(async plugin => { // 运行插件
       if (typeof plugin.start === 'function')
-        plugin.start({ options: Options._, users: Options.user }, false)
+        await plugin.start({ options: Options._, users: Options.user }, false)
     })
     this.loop = setInterval(() => this._loop(), 55 * 1000)
     new WebAPI().Start()
@@ -91,7 +91,7 @@ class BiLive {
         tools.Log(`已加载: ${name}, 用于: ${description}, 版本: ${version}, 作者: ${author}`)
         this._pluginList.set(pluginName, plugin)
       }
-      plugin.on('msg', (msg: any) => this._Notify(msg))
+      plugin.on('msg', async (msg: pluginNotify) => await this._Notify(msg))
     }
   }
   /**
@@ -117,22 +117,23 @@ class BiLive {
    */
   private async _Message(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
     // 运行插件
-    this._pluginList.forEach(plugin => {
-      if (typeof plugin.msg === 'function') plugin.msg({ message: raffleMessage, options: Options._, users: Options.user })
+    this._pluginList.forEach(async plugin => {
+      if (typeof plugin.msg === 'function')
+        await plugin.msg({ message: raffleMessage, options: Options._, users: Options.user })
     })
   }
   /**
-   * 插件间通讯(alpha)
+   * 插件间通讯(beta)
    *
    * @private
    * @param {pluginNotify} msg
    * @memberof BiLive
    */
-   private async _Notify(msg: pluginNotify) {
-     // 运行插件
-     this._pluginList.forEach(plugin => {
-       if (typeof plugin.notify === 'function') plugin.notify({ msg: msg, options: Options._, users: Options.user })
-     })
-   }
+  private async _Notify(msg: pluginNotify) {
+    this._pluginList.forEach(async plugin => {
+      if (typeof plugin.notify === 'function')
+        await plugin.notify({ msg: msg, options: Options._, users: Options.user })
+    })
+  }
 }
 export default BiLive
