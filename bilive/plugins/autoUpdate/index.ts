@@ -134,7 +134,8 @@ class AutoUpdate extends Plugin {
         tools.Log(`发现新版本 (${branch}@${remoteHash.substr(0,8)}) 10秒后开始更新 可能会重启数次`)
         tools.sendSCMSG(`发现新版本 即将进行自动升级`)
         await tools.Sleep(10 * 1000)
-        await this.gitMerge()
+        let merge = await this.gitMerge()
+        if (merge === undefined) tools.Log(`版本merge失败，请检查本地分支或尝试重新安装`)
       }
     }
   }
