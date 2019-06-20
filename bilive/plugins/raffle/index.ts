@@ -193,7 +193,7 @@ class Raffle extends Plugin {
       else this._raffle = true
     }
     else this._raffle = true
-    if (cstMin === 0 && cstHour % 12 === 0) {
+    if (cstMin === 0 && cstHour % 2 === 0) {
       this._raffleBanList.clear()
       this._stormBanList.clear()
     }

@@ -31,10 +31,11 @@ interface config {
 }
 
 interface advConfig {
-  [index: string]: boolean | number | string | number[]
+  [index: string]: boolean | number | string | number[] | string[]
   defaultUserID: number
   serverURL: string
   bakServerURL: string
+  serverDomains: string[]
   eventRooms: number[]
 }
 interface userCollection {

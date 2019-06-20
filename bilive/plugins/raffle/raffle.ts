@@ -203,6 +203,7 @@ class Raffle extends EventEmitter {
         break
       }
       else if (joinStorm.body.msg === '已经领取奖励') break
+      else if (joinStorm.body.msg === '节奏风暴抽奖过期') break
       if (joinStorm.body.msg === '你错过了奖励，下次要更快一点哦~') this.emit('msg', { cmd: 'unban', data: { uid: this._user.uid, type: 'beatStorm', nickname: this._user.nickname } })
       await tools.Sleep((<number[]>Options._.advConfig.stormSetting)[0])
     }
