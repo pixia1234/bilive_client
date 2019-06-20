@@ -11,14 +11,14 @@ const FSwriteFile = util.promisify(fs.writeFile)
 class Options extends EventEmitter {
   constructor() {
     super()
-    // 根据npm start参数不同设置不同路径
-    this._dirname = __dirname + (process.env.npm_package_scripts_start === 'tsc-watch --onSuccess \"node build/app.js\"' ? '/../' : '')
+    this._dirname = __dirname + '/../'
     // 检查是否有options目录
     const hasDir = fs.existsSync(this._dirname + 'options/')
     if (!hasDir) fs.mkdirSync(this._dirname + 'options/')
     // 读取默认设置文件
     const defaultOptionBuffer = fs.readFileSync(this._dirname + 'build/options.default.json')
     this._ = <options>JSON.parse(defaultOptionBuffer.toString())
+    this._.util = {}
     // 复制默认设置文件到用户设置文件
     const hasFile = fs.existsSync(this._dirname + 'options/options.json')
     if (!hasFile) fs.copyFileSync(this._dirname + 'build/options.default.json', this._dirname + 'options/options.json')
@@ -69,7 +69,6 @@ class Options extends EventEmitter {
     'serverURL',
     'bakServerURL',
     'eventRooms',
-    'adminServerChan',
     'user',
     'nickname',
     'userName',
@@ -109,6 +108,26 @@ class Options extends EventEmitter {
     })
   }
   /**
+   * 获取短id
+   *
+   * @param {number} roomID
+   * @returns {number}
+   * @memberof Options
+   */
+  public getShortRoomID(roomID: number): number {
+    return this.shortRoomID.get(roomID) || roomID
+  }
+  /**
+   * 获取长id
+   *
+   * @param {number} roomID
+   * @returns {number}
+   * @memberof Options
+   */
+  public getLongRoomID(roomID: number): number {
+    return this.longRoomID.get(roomID) || roomID
+  }
+  /**
    * 保存设置
    *
    * @returns
@@ -127,9 +146,6 @@ const liveOrigin = 'https://live.bilibili.com'
 const apiOrigin = 'https://api.bilibili.com'
 const apiVCOrigin = 'https://api.vc.bilibili.com'
 const apiLiveOrigin = 'https://api.live.bilibili.com'
-const smallTVPathname = '/gift/v4/smalltv'
-const rafflePathname = '/activity/v1/Raffle'
-const lotteryPathname = '/lottery/v2/Lottery'
 const beatStormPathname = '/lottery/v1/Storm'
 export default new Options()
-export { Options as __Options, liveOrigin, apiOrigin, apiVCOrigin, apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname, beatStormPathname }
+export { Options as __Options, liveOrigin, apiOrigin, apiVCOrigin, apiLiveOrigin, beatStormPathname }

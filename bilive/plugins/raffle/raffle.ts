@@ -12,12 +12,15 @@ class Raffle extends EventEmitter {
   /**
    * 创建一个 Raffle 实例
    * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
+   * @param {User} user
+   * @param {options} options
    * @memberof Raffle
    */
-  constructor(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage, user: User) {
+  constructor(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage , user: User, options: options) {
     super()
     this._raffleMessage = raffleMessage
     this._user = user
+    this._options = options
   }
   /**
    * 抽奖设置
@@ -36,6 +39,14 @@ class Raffle extends EventEmitter {
    */
   private _user: User
   /**
+   * 全局设置
+   *
+   * @private
+   * @type {options}
+   * @memberof Raffle
+   */
+  private _options: options
+  /**
    * 抽奖地址
    *
    * @private
@@ -49,20 +60,7 @@ class Raffle extends EventEmitter {
    * @memberof Raffle
    */
   public async Start() {
-    const { roomID } = this._raffleMessage
-    if (this._raffleMessage.cmd !== 'beatStorm') await tools.XHR({
-      method: 'POST',
-      uri: `https://api.live.bilibili.com/room/v1/Room/room_entry_action`,
-      body: `room_id=${roomID}&platform=pc&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}`,
-      jar: this._user.jar,
-      json: true,
-      headers: { 'Referer': `https://live.bilibili.com/${tools.getShortRoomID(roomID)}` }
-    })
     switch (this._raffleMessage.cmd) {
-      case 'smallTV':
-        this._url = 'https://api.live.bilibili.com/gift/v4/smalltv'
-        this._Raffle()
-        break
       case 'raffle':
         this._url = 'https://api.live.bilibili.com/gift/v4/smalltv'
         this._Raffle()
@@ -70,6 +68,10 @@ class Raffle extends EventEmitter {
       case 'lottery':
         this._url = 'https://api.live.bilibili.com/lottery/v2/lottery'
         this._Lottery()
+        break
+      case 'pklottery':
+        this._url = 'https://api.live.bilibili.com/xlive/lottery-interface/v1/pk'
+        this._PKLottery()
         break
       case 'beatStorm':
         this._url = 'https://api.live.bilibili.com/lottery/v1/Storm'
@@ -95,7 +97,7 @@ class Raffle extends EventEmitter {
    * @memberof Raffle
    */
   private async _RaffleAward() {
-    const { cmd, id, roomID, title, type } = this._raffleMessage
+    const { cmd, id, roomID, title, type } = <raffleMessage>this._raffleMessage
     const reward: requestOptions = {
       method: 'POST',
       uri: `${this._url}/getAward`,
@@ -103,14 +105,18 @@ class Raffle extends EventEmitter {
       json: true,
       headers: this._user.headers
     }
-    tools.XHR<raffleAward>(reward, 'Android').then(raffleAward => {
+    tools.XHR<raffleAward>(reward, 'Android').then(async raffleAward => {
       if (raffleAward !== undefined && raffleAward.response.statusCode === 200) {
         if (raffleAward.body.code === 0) {
           const gift = raffleAward.body.data
           if (gift.gift_num === 0) tools.Log(this._user.nickname, title, id, raffleAward.body.msg)
           if (gift.gift_num === undefined) {
             tools.Log(raffleAward.body)
-            tools.sendSCMSG(raffleAward.body.toString())
+            tools.emit('systemMSG', <systemMSG>{
+              message: raffleAward.body.toString(),
+              options: this._options,
+              user: this._user
+            })
           }
           else {
             const msg = `${this._user.nickname} ${title} ${id} 获得 ${gift.gift_num} 个${gift.gift_name}`
@@ -119,12 +125,20 @@ class Raffle extends EventEmitter {
               data: { uid: this._user.uid, nickname: this._user.nickname, type: cmd, name: gift.gift_name, num: gift.gift_num }
             })
             tools.Log(msg)
-            if (gift.gift_name.includes('小电视')) tools.sendSCMSG(msg)
+            if (gift.gift_name.includes('小电视')) tools.emit('systemMSG', <systemMSG>{
+              message: msg,
+              options: this._options,
+              user: this._user
+            })
           }
         }
         else tools.Log(this._user.nickname, title, id, raffleAward.body)
         if (raffleAward.body.msg === '访问被拒绝') 
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
+        else if (raffleAward.body.code === 500 && raffleAward.body.msg === '系统繁忙') {
+          await tools.Sleep(300)
+          this._RaffleAward()
+        }
       }
     })
   }
@@ -135,7 +149,7 @@ class Raffle extends EventEmitter {
    * @memberof Raffle
    */
   private async _Lottery() {
-    const { id, roomID, title, type } = this._raffleMessage
+    const { id, roomID, title, type } = <lotteryMessage>this._raffleMessage
     const reward: requestOptions = {
       method: 'POST',
       uri: `${this._url}/join`,
@@ -143,7 +157,7 @@ class Raffle extends EventEmitter {
       json: true,
       headers: this._user.headers
     }
-    tools.XHR<lotteryReward>(reward, 'Android').then(lotteryReward => {
+    tools.XHR<lotteryReward>(reward, 'Android').then(async lotteryReward => {
       if (lotteryReward !== undefined && lotteryReward.response.statusCode === 200) {
         if (lotteryReward.body.code === 0) {
           let data = lotteryReward.body.data
@@ -163,6 +177,46 @@ class Raffle extends EventEmitter {
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
         if (lotteryReward.body.msg === '访问被拒绝') 
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
+        else if (lotteryReward.body.code === 500 && lotteryReward.body.msg === '系统繁忙') {
+          await tools.Sleep(500)
+          this._Lottery()
+        }
+      }
+    })
+  }
+  /**
+   * PKLottery类抽奖
+   *
+   * @private
+   * @memberof Raffle
+   */
+  private async _PKLottery() {
+    const { id, roomID, title } = <lotteryMessage>this._raffleMessage
+    const reward: requestOptions = {
+      method: 'POST',
+      uri: `${this._url}/join`,
+      body: `roomid=${roomID}&id=${id}&csrf_token=${tools.getCookie(this._user.jar, 'bili_jct')}&csrf=${tools.getCookie(this._user.jar, 'bili_jct')}`,
+      jar: this._user.jar,
+      json: true,
+      headers: this._user.headers
+    }
+    tools.XHR<pkLotteryReward>(reward).then(pkReward => {
+      if (pkReward !== undefined && pkReward.response.statusCode === 200) {
+        if (pkReward.body.code === 0 && pkReward.body.data.award_text.includes('辣条X')) {
+          let data = pkReward.body.data
+          this.emit('msg', {
+            cmd: 'earn',
+            data: {
+              uid: this._user.uid,
+              nickname: this._user.nickname,
+              type: 'pklottery',
+              name: '辣条',
+              num: 1
+            }
+          })
+          tools.Log(this._user.nickname, title, id, '获得', data.award_text)
+        }
+        else tools.Log(this._user.nickname, title, id, pkReward.body)
       }
     })
   }
@@ -181,8 +235,11 @@ class Raffle extends EventEmitter {
       json: true,
       headers: this._user.headers
     }
+    let num: number = 1
+    if ((<beatStormMessage>this._raffleMessage).num !== undefined)
+      num = (<beatStormMessage>this._raffleMessage).num
     if (<number[]>Options._.advConfig.stormSetting === undefined) return
-    for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1]; i++) {
+    for (let i = 1; i <= (<number[]>Options._.advConfig.stormSetting)[1] * num; i++) {
       let joinStorm = await tools.XHR<joinStorm>(join, 'Android')
       if (joinStorm === undefined) break
       if (joinStorm.response.statusCode !== 200) {
@@ -260,6 +317,26 @@ interface lotteryRewardDataAwardlist {
   img: string
   type: number
   content: string
+}
+/**
+ * 大乱斗抽奖
+ * 
+ * @interface pkLotteryReward
+ */
+interface pkLotteryReward {
+  code: number
+  data: pkLotteryRewardData
+  msg: string
+  ttl: number
+}
+interface pkLotteryRewardData {
+  award_id: string,
+  award_image: string,
+  award_num: number,
+  award_text: string,
+  gift_type: number,
+  id: number,
+  title: string
 }
 /**
  * 节奏跟风返回值

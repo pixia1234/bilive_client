@@ -15,6 +15,8 @@ class BiLive {
   constructor() {}
   // 系统消息监听
   private _Listener!: Listener
+  // WS服务器
+  private _WebAPI!: WebAPI
   // 全局计时器
   private _lastTime = ''
   public loop!: NodeJS.Timer
@@ -51,7 +53,10 @@ class BiLive {
         await plugin.start({ options: Options._, users: Options.user }, false)
     })
     this.loop = setInterval(() => this._loop(), 55 * 1000)
-    new WebAPI().Start()
+    this._WebAPI = new WebAPI()
+    this._WebAPI
+      .on('utilMSG', msg => this._Interact(msg))
+      .Start()
     this.Listener()
   }
   /**
@@ -92,6 +97,7 @@ class BiLive {
         this._pluginList.set(pluginName, plugin)
       }
       plugin.on('msg', async (msg: pluginNotify) => await this._Notify(msg))
+      plugin.on('interact', async msg => await this._WebAPI.callback(msg))
     }
   }
   /**
@@ -105,6 +111,7 @@ class BiLive {
       .on('smallTV', (raffleMessage: raffleMessage) => this._Message(raffleMessage))
       .on('raffle', (raffleMessage: raffleMessage) => this._Message(raffleMessage))
       .on('lottery', (lotteryMessage: lotteryMessage) => this._Message(lotteryMessage))
+      .on('pklottery', (lotteryMessage: lotteryMessage) => this._Message(lotteryMessage))
       .on('beatStorm', (beatStormMessage: beatStormMessage) => this._Message(beatStormMessage))
       .Start()
   }
@@ -123,7 +130,7 @@ class BiLive {
     })
   }
   /**
-   * 插件间通讯(beta)
+   * 插件间通讯
    *
    * @private
    * @param {pluginNotify} msg
@@ -132,8 +139,20 @@ class BiLive {
   private async _Notify(msg: pluginNotify) {
     this._pluginList.forEach(async plugin => {
       if (typeof plugin.notify === 'function')
-        await plugin.notify({ msg: msg, options: Options._, users: Options.user })
+        await plugin.notify({ msg, options: Options._, users: Options.user })
     })
+  }
+  /**
+   * 前端页面交互
+   *
+   * @private
+   * @param {utilMSG} msg
+   * @memberof BiLive
+   */
+  private async _Interact(msg: utilMSG) {
+    const plugin = this._pluginList.get(msg.utilID)
+    if (plugin !== undefined && typeof plugin.interact === 'function')
+      await plugin.interact({ msg: msg, options: Options._, users: Options.user })
   }
 }
 export default BiLive

@@ -9,6 +9,7 @@ const optionDiv = <HTMLDivElement>document.querySelector('#option')
 const advOptionDiv = <HTMLDivElement>document.querySelector('#advOption')
 const configDiv = <HTMLDivElement>document.querySelector('#config')
 const advConfigDiv = <HTMLDivElement>document.querySelector('#advConfig')
+const utilDiv = <HTMLDivElement>document.querySelector('#util')
 const userDiv = <HTMLDivElement>document.querySelector('#user')
 const logDiv = <HTMLDivElement>document.querySelector('#log')
 const changeNetkeyDiv = <HTMLDivElement>document.querySelector('#changeNetkey')
@@ -105,6 +106,7 @@ async function login() {
   await showConfig()
   await showAdvOption()
   await showUser()
+  await showUtil()
   showLog()
   showChangeNetkey()
 }
@@ -252,6 +254,23 @@ async function showUser() {
   userDiv.appendChild(df)
 }
 /**
+ * 加载额外功能
+ *
+ */
+async function showUtil() {
+  const utilMSG = await options.getAllUtilID()
+  if (utilMSG.msg === '未知命令') return
+  const utilArray = utilMSG.data
+  const df = document.createDocumentFragment()
+  for (const utilID of utilArray) {
+    const utilMSG = await options.getUtil(utilID)
+    const utilData = utilMSG.data
+    const utilDF = getUtilDF(utilID, utilData)
+    df.appendChild(utilDF)
+  }
+  utilDiv.appendChild(df)
+}
+/**
  * 新建用户模板
  *
  * @param {string} uid
@@ -310,6 +329,28 @@ function getUserDF(uid: string, userData: userData): DocumentFragment {
   return clone
 }
 /**
+ * 新建功能插件模板
+ *
+ * @param {string} utilID
+ * @param {utilData} utilData
+ * @returns {DocumentFragment}
+ */
+function getUtilDF(utilID: string, utilData: utilData): DocumentFragment {
+  const utilTemplate = <HTMLTemplateElement>template.querySelector('#utilTemplate')
+  const clone = document.importNode(utilTemplate.content, true)
+  const utilConfigDiv = <HTMLDivElement>clone.querySelector('.utilConfigClass')
+  const utilPostButton = <HTMLElement>clone.querySelector('.utilPost')
+  const userConfigDF = getUtilConfigTemplate(utilData)
+  utilConfigDiv.appendChild(userConfigDF)
+  // 前端功能插件 数据提交
+  utilPostButton.onclick = async () => {
+    modal()
+    const sendUtilCallback = await options.sendUtil(utilID, utilData)
+    if (sendUtilCallback.msg !== undefined) modal({ body: sendUtilCallback.msg })
+  }
+  return clone
+}
+/**
  * 设置模板
  *
  * @param {(config | userData)} config
@@ -360,6 +401,59 @@ function getConfigTemplate(config: config | userData): DocumentFragment {
   return df
 }
 /**
+ * 设置util模板
+ *
+ * @param {utilData} utilData
+ * @returns {DocumentFragment}
+ */
+function getUtilConfigTemplate(utilData: utilData): DocumentFragment {
+  const df = document.createDocumentFragment()
+  for (const key in utilData) {
+    const info = utilData[key].info
+    const itemValue = utilData[key].value
+    let configTemplate: HTMLTemplateElement
+    if (info.type === 'boolean') configTemplate = <HTMLTemplateElement>template.querySelector('#configCheckboxTemplate')
+    else if (info.type === 'user') configTemplate = <HTMLTemplateElement>template.querySelector('#utilUserListTemplate')
+    else configTemplate = <HTMLTemplateElement>template.querySelector('#configTextTemplate')
+    const clone = document.importNode(configTemplate.content, true)
+    const descriptionDiv = <HTMLDivElement>clone.querySelector('._description')
+    const inputInput = <HTMLInputElement>clone.querySelector('.form-control')
+    const checkboxInput = <HTMLInputElement>clone.querySelector('.form-check-input')
+    switch (info.type) {
+      case 'number':
+        inputInput.value = (<number>itemValue).toString()
+        inputInput.oninput = () => utilData[key].value = parseInt(inputInput.value)
+        break
+      case 'string':
+        inputInput.value = <string>itemValue
+        inputInput.oninput = () => utilData[key].value = inputInput.value
+        break
+      case 'boolean':
+        checkboxInput.checked = <boolean>itemValue
+        checkboxInput.onchange = () => utilData[key].value = checkboxInput.checked
+        break
+      case 'user':
+          for (let i = 0; i < (<string[]>utilData[key].list).length; i++) {
+            let option = document.createElement("option")
+            const userStr = (<string[]>utilData[key].list)[i]
+            option.setAttribute("label", userStr)
+            option.setAttribute("value", userStr)
+            inputInput.appendChild(option)
+          }
+          inputInput.value = <string>itemValue
+          inputInput.onchange = () => utilData[key].value = inputInput.value
+          break
+      default:
+        break
+    }
+    descriptionDiv.innerText = info.description
+    descriptionDiv.title = info.tip
+    $(descriptionDiv).tooltip()
+    df.appendChild(clone)
+  }
+  return df
+}
+/**
  * 处理连接中断
  *
  * @param {string} data
@@ -370,6 +464,7 @@ function wsClose(data: string) {
   advConfigDiv.innerHTML = ''
   logDiv.innerText = ''
   userDiv.innerText = ''
+  utilDiv.innerText = ''
   connectSpan.innerText = data
   danimation(loginDiv)
 }

@@ -46,7 +46,9 @@ class Task extends Plugin {
     users.forEach(async (user, uid) => {
       if (this._taskList.get(uid) || !user.userData['doTask']) return
       const task: requestOptions = {
-        uri: 'https://api.live.bilibili.com/activity/v1/task/receive_award?task_id=double_watch_task',
+        method: 'POST',
+        uri: 'https://api.live.bilibili.com/activity/v1/task/receive_award',
+        body: `task_id=double_watch_task&csrf_token=${tools.getCookie(user.jar, 'bili_jct')}&csrf=${tools.getCookie(user.jar, 'bili_jct')}`,
         jar: user.jar,
         json: true
       }

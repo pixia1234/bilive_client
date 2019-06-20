@@ -7,7 +7,7 @@ interface message {
   msg?: string
   ts?: string
   uid?: string
-  data?: config | optionsInfo | string[] | userData
+  data?: config | optionsInfo | string[] | userData | utilData
 }
 interface logMSG extends message {
   data: string[]
@@ -26,6 +26,10 @@ interface userDataMSG extends message {
   data: userData
   captcha?: string
 }
+interface utilMSG extends message {
+  utilID: string
+  data: utilData
+}
 // 应用设置
 interface config {
   [index: string]: number | number[] | string | string[]
@@ -40,4 +44,12 @@ interface configInfoData {
   description: string
   tip: string
   type: string
+}
+interface utilData {
+  [index: string]: utilDataItem
+}
+interface utilDataItem {
+  value: string | boolean | number | number[]
+  list?: string[]
+  info: configInfoData
 }

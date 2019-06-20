@@ -12,6 +12,7 @@ interface options {
   config: config
   advConfig: advConfig
   user: userCollection
+  util: utilCollection
   newUserData: userData
   info: optionsInfo
   roomList: [number, number][]
@@ -25,9 +26,8 @@ interface server {
   netkey: string
 }
 interface config {
-  [index: string]: boolean | number | string | number[]
+  [index: string]: boolean | number | number[] | string | string[]
   localListener: boolean
-  adminServerChan: string
 }
 
 interface advConfig {
@@ -35,14 +35,13 @@ interface advConfig {
   defaultUserID: number
   serverURL: string
   bakServerURL: string
-  serverDomains: string[]
   eventRooms: number[]
 }
 interface userCollection {
   [index: string]: userData
 }
 interface userData {
-  [index: string]: string | boolean | number | number[]
+  [index: string]: boolean | number | number[] | string | string[]
   nickname: string
   userName: string
   passWord: string
@@ -51,6 +50,17 @@ interface userData {
   refreshToken: string
   cookie: string
   status: boolean
+}
+interface utilCollection {
+  [index: string]: utilData
+}
+interface utilData {
+  [index: string]: utilDataItem
+}
+interface utilDataItem {
+  value: string | boolean | number
+  list?: string[]
+  info: configInfoData
 }
 interface optionsInfo {
   [index: string]: configInfoData
@@ -90,6 +100,7 @@ interface DMclientOptions {
   roomID?: number
   userID?: number
   protocol?: DMclientProtocol
+  key?: string
 }
 type DMclientProtocol = 'socket' | 'flash' | 'ws' | 'wss'
 type DMerror = DMclientError | DMdanmakuError
@@ -101,6 +112,31 @@ interface DMdanmakuError {
   status: dmErrorStatus.danmaku
   error: TypeError
   data: Buffer
+}
+// 弹幕服务器
+interface danmuInfo {
+  code: number
+  message: string
+  ttl: number
+  data: danmuInfoData
+}
+interface danmuInfoData {
+  refresh_row_factor: number
+  refresh_rate: number
+  max_delay: number
+  token: string
+  host_list: danmuInfoDataHostList[]
+  ip_list: danmuInfoDataIPList[]
+}
+interface danmuInfoDataHostList {
+  host: string
+  port: number
+  wss_port: number
+  ws_port: number
+}
+interface danmuInfoDataIPList {
+  host: string
+  port: number
 }
 /*******************
  *** app_client ****
@@ -229,14 +265,14 @@ interface XHRresponse<T> {
   body: T
 }
 /**
- * Server酱
+ * 客户端消息
  *
- * @interface serverChan
+ * @interface systemMSG
  */
-interface serverChan {
-  errno: number
-  errmsg: string
-  dataset: string
+interface systemMSG {
+  message: string
+  options: options
+  user?: User
 }
 /*******************
  ** bilive_client **
@@ -247,7 +283,7 @@ interface serverChan {
  * @interface raffleMessage
  */
 interface raffleMessage {
-  cmd: 'smallTV' | 'raffle'
+  cmd: 'raffle'
   roomID: number
   id: number
   type: string
@@ -262,7 +298,7 @@ interface raffleMessage {
  * @interface lotteryMessage
  */
 interface lotteryMessage {
-  cmd: 'lottery'
+  cmd: 'lottery' | 'pklottery'
   roomID: number
   id: number
   type: string
@@ -278,6 +314,7 @@ interface beatStormMessage {
   cmd: 'beatStorm'
   roomID: number
   id: number
+  num: number
   type: string
   title: string
   time: number
@@ -381,87 +418,112 @@ interface searchID_Data_Result_User {
   mid: number
 }
 /**
- * 抽奖raffle检查
+ * 统一抽奖信息
  *
- * @interface raffleCheck
+ * @interface lotteryInfo
  */
-interface raffleCheck {
+interface lotteryInfo {
   code: number
-  msg: string
-  message: string
-  data: raffleCheckData
+  ttl: number
+  data: lotteryInfoData
 }
-interface raffleCheckData {
-  last_raffle_id: number
-  last_raffle_type: string
-  asset_animation_pic: string
-  asset_tips_pic: string
-  list: raffleCheckDataList[]
+interface lotteryInfoData {
+  activity_box: null
+  bls_box: null
+  gift_list: lotteryInfoDataGiftList[]
+  guard: lotteryInfoDataGuard[]
+  pk: lotteryInfoDataPk[]
+  slive_box: lotteryInfoDataSilverBox
+  storm: lotteryInfoDataStorm
 }
-interface raffleCheckDataList {
+
+interface lotteryInfoDataGiftList {
   raffleId: number
   title: string
   type: string
-  from: string
-  from_user: raffleCheckDataListFromuser
+  payflow_id: number
+  from_user: lotteryInfoDataGiftListFromUser
   time_wait: number
   time: number
   max_time: number
   status: number
   asset_animation_pic: string
   asset_tips_pic: string
+  sender_type: number
 }
-interface raffleCheckDataListFromuser {
+interface lotteryInfoDataGiftListFromUser {
   uname: string
   face: string
 }
-/**
- * 抽奖lottery检查
- *
- * @interface lotteryCheck
- * 快速抽奖检查
- *
- * @interface lightenCheck
- */
-interface lotteryCheck {
-  code: number
-  msg: string
-  message: string
-  data: lotteryCheckData
-}
-interface lotteryCheckData {
-  guard: lotteryCheckDataGuard[]
-  storm: lotteryCheckDataStorm[]
-}
-interface lotteryCheckDataGuard {
+interface lotteryInfoDataGuard {
   id: number
-  sender: lotteryCheckDataSender
+  sender: lotteryInfoDataGuardSender
   keyword: string
+  privilege_type: number
   time: number
   status: number
-  mobile_display_mode: number
-  mobile_static_asset: string
-  mobile_animation_asset: string
+  payflow_id: string
 }
-interface lotteryCheckDataStorm {
-  id: number
-  sender: lotteryCheckDataSender
-  keyword: string
-  time: number
-  status: number
-  mobile_display_mode: number
-  mobile_static_asset: string
-  mobile_animation_asset: string
-  extra: lotteryCheckDataStormExtra
-}
-interface lotteryCheckDataStormExtra {
-  num: number
-  content: string
-}
-interface lotteryCheckDataSender {
+interface lotteryInfoDataGuardSender {
   uid: number
   uname: string
   face: string
+}
+interface lotteryInfoDataPk {
+  id: number
+  pk_id: number
+  room_id: number
+  time: number
+  status: number
+  asset_icon: string
+  asset_animation_pic: string
+  title: string
+  max_time: number
+}
+interface lotteryInfoDataSilverBox {
+  minute: number
+  silver: number
+  time_end: number
+  time_start: number
+  times: number
+  max_times: number
+  status: number
+}
+interface lotteryInfoDataStorm {
+  id: number
+  num: number
+  time: number
+  content: string
+  hadJoin: number
+  storm_gif: string
+}
+interface lotteryInfoDataPk {
+  id: number
+  pk_id: number
+  room_id: number
+  time: number
+  status: number
+  asset_icon: string
+  asset_animation_pic: string
+  title: string
+  max_time: number
+}
+interface lotteryInfoDataSilverBox {
+  minute: number
+  silver: number
+  time_end: number
+  time_start: number
+  times: number
+  max_times: number
+  status: number
+}
+interface lotteryInfoDataStorm {
+  id: number
+  num: number
+  time: number
+  content: string
+  hadJoin: number
+  storm_gif: string
 }
 /*******************
  ***** online ******
@@ -474,6 +536,11 @@ interface lotteryCheckDataSender {
 interface userOnlineHeart {
   code: number
   msg: string
+  message: string
+  data: userOnlineHeartData
+}
+interface userOnlineHeartData {
+  giftlist: any[]
 }
 /*******************
  ***** options *****
@@ -489,13 +556,46 @@ interface IPlugin extends EPlugin {
   version: string
   author: string
   loaded: boolean
-  load?({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }): Promise<void>
-  start?({ options, users }: { options: options, users: Map<string, User> }, newUser: boolean): Promise<void>
-  loop?({ cst, cstMin, cstHour, cstString, options, users }: { cst: Date, cstMin: number, cstHour: number, cstString: string, options: options, users: Map<string, User> }): Promise<void>
-  msg?({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }): Promise<void>
-  notify?({ msg, options, users }: { msg: pluginNotify, options: options, users: Map<string, User> }): Promise<void>
+  load?({ defaultOptions, whiteList }: {
+    defaultOptions: options,
+    whiteList: Set<string>
+  }): Promise<void>
+  start?({ options, users }: {
+    options: options,
+    users: Map<string, User>
+  }, newUser: boolean): Promise<void>
+  loop?({ cst, cstMin, cstHour, cstString, options, users }: {
+    cst: Date,
+    cstMin: number,
+    cstHour: number,
+    cstString: string,
+    options: options,
+    users: Map<string, User>
+  }): Promise<void>
+  msg?({ message, options, users }: {
+    message: raffleMessage | lotteryMessage | beatStormMessage,
+    options: options,
+    users: Map<string, User>
+  }): Promise<void>
+  notify?({ msg, options, users }: {
+    msg: pluginNotify,
+    options: options,
+    users: Map<string, User>
+  }): Promise<void>
+  interact?({ msg, options, users }: {
+    msg: utilMSG,
+    options: options,
+    users: Map<string, User>
+  }): Promise<void>
 }
 interface pluginNotify {
   cmd: string
   data: any
+}
+interface utilMSG {
+  cmd: string
+  msg: string
+  ts: string
+  utilID: string
+  data: utilData
 }

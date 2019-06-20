@@ -316,4 +316,37 @@ export class Options {
     const message = { cmd: 'newUserData' }
     return this._send<userDataMSG>(message)
   }
+  /**
+   * 获取utilID
+   * 
+   * @returns {Promise<any>} 
+   * @memberof Options
+   */
+  public getAllUtilID(): Promise<any> {
+    const message = { cmd: 'getAllUtilID' }
+    return this._send<any>(message)
+  }
+  /**
+   * 获取util功能（前端界面参数）
+   * 
+   * @param {string} utilID 
+   * @returns {Promise<any>} 
+   * @memberof Options
+   */
+  public getUtil(utilID: string): Promise<any> {
+    const message = { cmd: 'getUtilData', utilID }
+    return this._send<any>(message)
+  }
+  /**
+   * util发送数据至ws服务器
+   * 
+   * @param {string} utilID
+   * @param {utilData} utilData 
+   * @returns {Promise<any>} 
+   * @memberof Options
+   */
+  public sendUtil(utilID: string, utilData: utilData): Promise<utilMSG> {
+    const message = { cmd: 'utilMSG', utilID, data: utilData }
+    return this._send<utilMSG>(message)
+  }
 }

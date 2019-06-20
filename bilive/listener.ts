@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events'
+import { Options as requestOptions } from 'request'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
 import Client from './client_re'
 import DMclient from './dm_client_re'
-import Options, { apiLiveOrigin, smallTVPathname, rafflePathname, lotteryPathname } from './options'
+import Options, { apiLiveOrigin } from './options'
 /**
  * 监听服务器消息
  *
@@ -39,15 +40,15 @@ class Listener extends EventEmitter {
    */
   private _BackupWSServer: Client = new Client('','')
   /**
-   * 抽奖ID记录缓存
+   * 抽奖ID
    *
    * @private
    * @type {Set<number>}
    * @memberof Listener
    */
-  private _smallTVID: Set<number> = new Set()
   private _raffleID: Set<number> = new Set()
   private _lotteryID: Set<number> = new Set()
+  private _pklotteryID: Set<number> = new Set()
   private _beatStormID: Set<number> = new Set()
   private _MSGCache: Set<string> = new Set()
   /**
@@ -105,9 +106,8 @@ class Listener extends EventEmitter {
         if (this._DMclient.has(roomID)) return
         const newDMclient = new DMclient({ roomID, userID })
         newDMclient
-          .on('SYS_MSG', dataJson => this._SYSMSGHandler(dataJson))
-          .on('SYS_GIFT', dataJson => this._SYSGiftHandler(dataJson))
-          .on('GUARD_MSG', dataJson => this._LotteryHandler(dataJson))
+          .on('SYS_MSG', dataJson => this._RaffleCheck(dataJson))
+          .on('SYS_GIFT', dataJson => this._RaffleCheck(dataJson))
           .Connect()
         this._DMclient.set(roomID, newDMclient)
       })
@@ -126,9 +126,9 @@ class Listener extends EventEmitter {
    */
   public clearAllID() {
     if (Date.now() - this._lastUpdate < 3 * 60 * 1000) return
-    this._smallTVID.clear()
     this._raffleID.clear()
     this._lotteryID.clear()
+    this._pklotteryID.clear()
     this._beatStormID.clear()
   }
   /**
@@ -142,9 +142,9 @@ class Listener extends EventEmitter {
     if (server !== undefined && protocol !== undefined) {
       this._MainWSServer = new Client(server, protocol)
       this._MainWSServer
-        .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
         .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
         .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+        .on('pklottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
         .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
         .on('sysmsg', (systemMessage: systemMessage) => tools.Log('主服务器消息:', systemMessage.msg))
         .Connect()
@@ -163,9 +163,9 @@ class Listener extends EventEmitter {
     if (server !== undefined && protocol !== undefined) {
       this._BackupWSServer = new Client(server, protocol)
       this._BackupWSServer
-        .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
         .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
         .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+        .on('pklottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
         .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
         .on('sysmsg', (systemMessage: systemMessage) => tools.Log('备用服务器消息:', systemMessage.msg))
         .Connect()
@@ -174,74 +174,27 @@ class Listener extends EventEmitter {
     Options.on('bakClientUpdate', () => this._BackupWSServer.Update(Options._.advConfig.bakServerURL))
   }
   /**
-   * 监听弹幕系统消息
+   * 本地监听房间消息
    *
    * @private
-   * @param {SYS_MSG} dataJson
+   * @param {(SYS_MSG | SYS_GIFT)} dataJson
    * @memberof Listener
    */
-  private async _SYSMSGHandler(dataJson: SYS_MSG) {
+  private async _RaffleCheck(dataJson: SYS_MSG | SYS_GIFT) {
     if (dataJson.real_roomid === undefined || this._MSGCache.has(dataJson.msg_text)) return
     this._MSGCache.add(dataJson.msg_text)
-    const url = apiLiveOrigin + smallTVPathname
     const roomID = dataJson.real_roomid
-    await tools.Sleep(15 * 1000)
-    this._RaffleCheck(url, roomID)
-  }
-  /**
-   * 监听系统礼物消息
-   *
-   * @private
-   * @param {SYS_GIFT} dataJson
-   * @memberof Listener
-   */
-  private async _SYSGiftHandler(dataJson: SYS_GIFT) {
-    if (dataJson.real_roomid === undefined || dataJson.giftId === undefined || this._MSGCache.has(dataJson.msg_text)) return
-    this._MSGCache.add(dataJson.msg_text)
-    const url = apiLiveOrigin + rafflePathname
-    const roomID = dataJson.real_roomid
-    this._RaffleCheck(url, roomID)
-  }
-  /**
-   * 监听Lottery消息
-   *
-   * @private
-   * @param {GUARD_MSG} dataJson
-   * @memberof Listener
-   */
-  private async _LotteryHandler(dataJson: GUARD_MSG) {
-    const url = apiLiveOrigin + lotteryPathname
-    const rege = /(?:(主播 )).*(?=( 的直播间开通了总督))/
-    const res = rege.exec(dataJson.msg)
-    if (res === null) return
-    const upID = res[0].toString().substr(3)
-    const searchCheck = await tools.XHR<searchID>({
-      uri: encodeURI('https://api.bilibili.com/x/web-interface/search/type?jsonp=jsonp&search_type=live&highlight=1&keyword=' + upID + '&callback=__jp1'),
-      json: true
-    })
-    if (searchCheck === undefined || searchCheck.body.data.result.live_user.length === 0) return
-    const roomID = searchCheck.body.data.result.live_user[0].roomid
-    this._LotteryCheck(url, roomID)
-  }
-  /**
-   * 检查房间抽奖raffle信息
-   *
-   * @private
-   * @param {string} url
-   * @param {number} roomID
-   * @memberof Listener
-   */
-  private async _RaffleCheck(url: string, roomID: number) {
     await tools.Sleep(3 * 1000) // 等待3s, 防止土豪刷屏
-    const raffleCheck = await tools.XHR<raffleCheck>({
-      uri: `${url}/check?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
+    const _lotteryInfo: requestOptions = {
+      uri: `${apiLiveOrigin}/xlive/lottery-interface/v1/lottery/getLotteryInfo?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
       json: true
-    }, 'Android')
-    if (raffleCheck !== undefined && raffleCheck.response.statusCode === 200
-      && raffleCheck.body.code === 0 && raffleCheck.body.data.list.length > 0) {
-      raffleCheck.body.data.list.forEach(data => {
+    }
+    const lotteryInfo = await tools.XHR<lotteryInfo>(_lotteryInfo, 'Android')
+    if (lotteryInfo !== undefined && lotteryInfo.response.statusCode === 200
+      && lotteryInfo.body.code === 0 && lotteryInfo.body.data.gift_list.length > 0) {
+      lotteryInfo.body.data.gift_list.forEach(data => {
         const message: message = {
-          cmd: data.type === 'small_tv' ? 'smallTV' : 'raffle',
+          cmd: 'raffle',
           roomID,
           id: +data.raffleId,
           type: data.type,
@@ -249,35 +202,6 @@ class Listener extends EventEmitter {
           time: +data.time_wait,
           max_time: +data.max_time,
           time_wait: +data.time_wait
-        }
-        this._RaffleHandler(message)
-      })
-    }
-  }
-  /**
-   * 检查房间抽奖lottery信息
-   *
-   * @private
-   * @param {string} url
-   * @param {number} roomID
-   * @memberof Listener
-   */
-  // @ts-ignore 暂时无用
-  private async _LotteryCheck(url: string, roomID: number) {
-    const lotteryCheck = await tools.XHR<lotteryCheck>({
-      uri: `${url}/check?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
-      json: true
-    }, 'Android')
-    if (lotteryCheck !== undefined && lotteryCheck.response.statusCode === 200
-      && lotteryCheck.body.code === 0 && lotteryCheck.body.data.guard.length > 0) {
-      lotteryCheck.body.data.guard.forEach(data => {
-        const message: message = {
-          cmd: 'lottery',
-          roomID,
-          id: +data.id,
-          type: data.keyword,
-          title: '舰队抽奖',
-          time: 0
         }
         this._RaffleHandler(message)
       })
@@ -293,10 +217,6 @@ class Listener extends EventEmitter {
   private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
     const { cmd, id, roomID, title } = raffleMessage
     switch (cmd) {
-      case 'smallTV':
-        if (this._smallTVID.has(id)) return
-        this._smallTVID.add(id)
-        break
       case 'raffle':
         if (this._raffleID.has(id)) return
         this._raffleID.add(id)
@@ -309,12 +229,17 @@ class Listener extends EventEmitter {
         if (this._beatStormID.has(id)) return
         this._beatStormID.add(id)
         break
+      case 'pklottery':
+        if (this._pklotteryID.has(id)) return
+        this._pklotteryID.add(id)
+        break
       default: return
     }
     // 更新时间
     this._lastUpdate = Date.now()
     this.emit(cmd, raffleMessage)
-    tools.Log(`房间 ${tools.getShortRoomID(roomID)} 开启了第 ${id} 轮${title}`)
+    tools.Log(`房间 ${Options.getShortRoomID(roomID)} 开启了第 ${id} 轮${title}`)
   }
 }
+
 export default Listener

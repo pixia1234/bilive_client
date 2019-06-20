@@ -18,8 +18,6 @@ class Raffle extends Plugin {
   private _stormBanList: Map<string, boolean> = new Map()
   // 风暴限制列表
   private _stormEarn: any = {}
-  // 上次raffle时间
-  private _lastRaffleTime: number = Date.now()
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 抽奖暂停
     defaultOptions.config['rafflePause'] = []
@@ -77,14 +75,6 @@ class Raffle extends Plugin {
       type: 'number'
     }
     whiteList.add('beatStormDrop')
-    // 小电视抽奖
-    defaultOptions.newUserData['smallTV'] = false
-    defaultOptions.info['smallTV'] = {
-      description: '小电视抽奖',
-      tip: '自动参与小电视抽奖',
-      type: 'boolean'
-    }
-    whiteList.add('smallTV')
     // raffle类抽奖
     defaultOptions.newUserData['raffle'] = false
     defaultOptions.info['raffle'] = {
@@ -101,7 +91,15 @@ class Raffle extends Plugin {
       type: 'boolean'
     }
     whiteList.add('lottery')
-    // 节奏风暴
+    // pklottery类抽奖
+    defaultOptions.newUserData['pklottery'] = false
+    defaultOptions.info['pklottery'] = {
+      description: '大乱斗抽奖',
+      tip: '自动参与pklottery类抽奖',
+      type: 'boolean'
+    }
+    whiteList.add('pklottery')
+    // beatStorm类抽奖
     defaultOptions.newUserData['beatStorm'] = false
     defaultOptions.info['beatStorm'] = {
       description: '节奏风暴',
@@ -204,17 +202,34 @@ class Raffle extends Plugin {
     Options.save()
   }
   public async msg({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
-    if (this._raffle) {
-      if (message.cmd === 'beatStorm') this._doStorm({message, options, users})
+    if (this._raffle) await this._preRaffle({message, options, users})
+  }
+  // 抽奖缓存，应对大量抽奖
+  private raffleSet: Set<number> = new Set()
+  private raffleTime: number = Date.now()
+  /**
+   * 抽奖缓冲，应对大量抽奖
+   * 
+   */
+  private async _preRaffle({ message, options, users }: { message: raffleMessage | lotteryMessage | beatStormMessage, options: options, users: Map<string, User> }) {
+    const raffleID = message.id
+    if (message.cmd === 'beatStorm') this._doStorm({message, options, users})
+    else {
+      if (Date.now() - this.raffleTime < 400) {
+        this.raffleTime = Date.now()
+        this.raffleSet.add(raffleID)
+        await tools.Sleep(400 * this.raffleSet.size)
+        this._doRaffle({message, options, users})
+      }
       else {
-        if (Date.now() - this._lastRaffleTime < 400) await tools.Sleep(400)
-        this._lastRaffleTime = Date.now()
+        this.raffleTime = Date.now()
+        this.raffleSet.clear()
         this._doRaffle({message, options, users})
       }
     }
   }
   /**
-   * 进行raffle类抽奖
+   * 进行非beatStorm类抽奖
    * 
    * @param {message, options, users}
    * @private
@@ -231,15 +246,16 @@ class Raffle extends Plugin {
         continue
       }
       else {
-        const lottery = new Lottery(message, user)
+        const lottery = new Lottery(message, user, options)
         lottery
           .on('msg', (msg: pluginNotify) => {
             if (msg.cmd === 'ban') this._raffleBanList.set(msg.data.uid, true)
             this.emit('msg', msg)
           })
           .Start()
+        this.raffleSet.delete(message.id)
       }
-      await tools.Sleep(100)
+      await tools.Sleep(300)
     }
   }
   /**
@@ -260,7 +276,7 @@ class Raffle extends Plugin {
       else {
         const delay = <number>options.advConfig['beatStormDelay']
         if (delay !== 0) await tools.Sleep(delay)
-        const lottery = new Lottery(message, user)
+        const lottery = new Lottery(message, user, options)
         lottery
           .on('msg', (msg: pluginNotify) => {
             if (msg.cmd === 'ban') this._stormBanList.set(msg.data.uid, true)

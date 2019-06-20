@@ -13,14 +13,12 @@ class GetStatus extends Plugin {
   // 监听状态
   private listenStatus: any = {
     startTime: 0,
-    smallTV: 0,
     raffle: 0,
     lottery: 0,
     beatStorm: 0
   }
   // 监听状态(Daily, 只统计当天0点开始的监听量)
   private todayListenStatus: any = {
-    smallTV: 0,
     raffle: 0,
     lottery: 0,
     beatStorm: 0
@@ -115,17 +113,23 @@ class GetStatus extends Plugin {
     if (data.type === 'raffle') {
       if (!this._raffleBanList.get(data.uid)) {
         this._raffleBanList.set(data.uid, true)
-        tools.Log(`${data.nickname}已封禁`)
-        tools.sendSCMSG(`${data.nickname}已封禁`)
         user.userData['raffleBan'] = true
+        await tools.Sleep(Math.random() * 5 * 1000)
+        tools.emit('systemMSG', <systemMSG>{
+          message: `${data.nickname}已封禁`,
+          options: Options._
+        })
       }
     }
     else {
       if (!this._stormBanList.get(data.uid)) {
         this._stormBanList.set(data.uid, true)
-        tools.Log(`${data.nickname}风暴已封禁`)
-        tools.sendSCMSG(`${data.nickname}风暴已封禁`)
         user.userData['beatStormBan'] = true
+        await tools.Sleep(Math.random() * 5 * 1000)
+        tools.emit('systemMSG', <systemMSG>{
+          message: `${data.nickname}风暴已封禁`,
+          options: Options._
+        })
       }
     }
     Options.save()
@@ -141,17 +145,23 @@ class GetStatus extends Plugin {
     if (data.type !== 'beatStorm') {
       if (this._raffleBanList.get(data.uid)) {
         this._raffleBanList.set(data.uid, false)
-        tools.Log(`${data.nickname}已解除封禁`)
-        tools.sendSCMSG(`${data.nickname}已解除封禁`)
         user.userData['raffleBan'] = false
+        await tools.Sleep(Math.random() * 5 * 1000)
+        tools.emit('systemMSG', <systemMSG>{
+          message: `${data.nickname}已解除封禁`,
+          options: Options._
+        })
       }
     }
     else {
       if (this._stormBanList.get(data.uid)) {
         this._stormBanList.set(data.uid, false)
-        tools.Log(`${data.nickname}已解除风暴封禁`)
-        tools.sendSCMSG(`${data.nickname}已解除风暴封禁`)
         user.userData['beatStormBan'] = false
+        await tools.Sleep(Math.random() * 5 * 1000)
+        tools.emit('systemMSG', <systemMSG>{
+          message: `${data.nickname}已解除风暴封禁`,
+          options: Options._
+        })
       }
     }
     Options.save()
@@ -288,11 +298,10 @@ class GetStatus extends Plugin {
     let logMsg: string = '\n'
     let headLine: string = `/********************************* bilive_client 运行信息 *********************************/`
     let timeLine: string = `本次挂机开始于 ${new Date(this.listenStatus.startTime).toString()}`
-    let smallTVLine: string = `共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})`
     let raffleLine: string = `共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})`
     let lotteryLine: string = `共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})`
     let beatStormLine: string = `共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})`
-    logMsg += headLine + '\n' + timeLine + '\n' + smallTVLine + '\n'
+    logMsg += headLine + '\n' + timeLine + '\n'
       + raffleLine + '\n' + lotteryLine + '\n' + beatStormLine + '\n'
     for (const uid in rawMsg) {
       let line, live, medal, bag, raffle: string = ''
@@ -370,7 +379,6 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
     let pushMsg: string = ''
     pushMsg += `# bilive_client 挂机情况报告\n`
     pushMsg += `- 本次挂机开始于 ${new Date(this.listenStatus.startTime).toString()}\n`
-    pushMsg += `- 共监听到小电视抽奖数：${this.listenStatus.smallTV}(${this.todayListenStatus.smallTV})\n`
     pushMsg += `- 共监听到活动抽奖数：${this.listenStatus.raffle}(${this.todayListenStatus.raffle})\n`
     pushMsg += `- 共监听到大航海抽奖数：${this.listenStatus.lottery}(${this.todayListenStatus.lottery})\n`
     pushMsg += `- 共监听到节奏风暴抽奖数：${this.listenStatus.beatStorm}(${this.todayListenStatus.beatStorm})\n`
@@ -440,7 +448,10 @@ EXP：${user.medalData.intimacy}/${user.medalData.next_intimacy} \
       }()
       pushMsg += '\n---\n' + line + '\n---\n' + live + '\n---\n' + medal + '\n---\n' + bag + '\n---\n' + raffle + '\n---\n'
     }
-    tools.sendSCMSG(pushMsg)
+    tools.emit('SCMSG', <systemMSG>{
+      message: pushMsg,
+      options: Options._
+    })
   }
 }
 

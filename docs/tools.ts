@@ -2,24 +2,24 @@ import { Buffer } from 'buffer'
 
 // 异或加密
 
-export function xorStrings(key: string, input: string):string {
-    let output:string = '';
-    for(let i = 0, len = input.length; i < len; i++) {
-      output += String.fromCharCode(
-        input.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-      );
-    }
-    return output;
+export function xorStrings(key: string, input: string): string {
+  let output: string = '';
+  for (let i = 0, len = input.length; i < len; i++) {
+    output += String.fromCharCode(
+      input.charCodeAt(i) ^ key.charCodeAt(i % key.length)
+    )
   }
+  return output
+}
   
 export const B64XorCipher = {
   encode(key: string, data: string): string {
-    return (data && data !== '' && key !== '')? new Buffer(xorStrings(key, data), 'utf8').toString('base64') : data;
+    return (data && data !== '' && key !== '') ? new Buffer(xorStrings(key, data), 'utf8').toString('base64') : data
   },
   decode(key: string, data: string): string {
-    return (data && data !== '' && key !== '')? xorStrings(key, new Buffer(data, 'base64').toString('utf8')) : data;
+    return (data && data !== '' && key !== '') ? xorStrings(key, new Buffer(data, 'base64').toString('utf8')) : data
   }
-};
+}
 
 /**
  * 弹窗提示

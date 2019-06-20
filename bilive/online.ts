@@ -1,5 +1,4 @@
 import { CookieJar as requestCookieJar } from 'request'
-import request from 'request'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
 import Options, { apiLiveOrigin, liveOrigin } from './options'
@@ -71,10 +70,6 @@ class Online extends AppClient {
   public async Start(): Promise<'captcha' | 'stop' | void> {
     clearTimeout(this._heartTimer)
     if (!Options.user.has(this.uid)) Options.user.set(this.uid, this)
-    if (this.jar === undefined) {
-      await this.init()
-      this.jar = tools.setCookie(this.cookieString)
-    }
     const test = await this.getOnlineInfo()
     if (test !== undefined) return test
     this._heartLoop()
@@ -89,7 +84,11 @@ class Online extends AppClient {
     Options.user.delete(this.uid)
     this.userData.status = false
     Options.save()
-    tools.sendSCMSG(`${this.nickname} 已停止挂机`)
+    tools.emit('systemMSG', <systemMSG>{
+      message: `${this.nickname} 已停止挂机`,
+      options: Options._,
+      user: this
+    })
   }
   /**
    * 检查是否登录
@@ -100,12 +99,12 @@ class Online extends AppClient {
    */
   public async getOnlineInfo(roomID = Options._.advConfig.eventRooms[0]): Promise<'captcha' | 'stop' | void> {
     const isLogin = await tools.XHR<{ code: number }>({
-      uri: `${liveOrigin}/user/getuserinfo`,
+      uri: `${apiLiveOrigin}/xlive/web-ucenter/user/get_user_info`,
       jar: this.jar,
       json: true,
-      headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(roomID)}` }
+      headers: { 'Referer': `${liveOrigin}/${Options.getShortRoomID(roomID)}` }
     })
-    if (isLogin !== undefined && isLogin.response.statusCode === 200 && isLogin.body.code === -500)
+    if (isLogin !== undefined && isLogin.response.statusCode === 200 && isLogin.body.code === -101)
       return this._cookieError()
   }
   /**
@@ -135,16 +134,17 @@ class Online extends AppClient {
     const heartPC = await tools.XHR<userOnlineHeart>({
       method: 'POST',
       uri: `${apiLiveOrigin}/User/userOnlineHeart`,
+      body: `csrf_token=${tools.getCookie(this.jar, 'bili_jct')}&csrf=${tools.getCookie(this.jar, 'bili_jct')}&visit_id=`,
       jar: this.jar,
       json: true,
-      headers: { 'Referer': `${liveOrigin}/${tools.getShortRoomID(roomID)}` }
+      headers: { 'Referer': `${liveOrigin}/${Options.getShortRoomID(roomID)}` }
     })
     if (heartPC !== undefined && heartPC.response.statusCode === 200 && heartPC.body.code === 3) return 'cookieError'
     // 客户端
     const heart = await tools.XHR<userOnlineHeart>({
       method: 'POST',
-      uri: `${apiLiveOrigin}/mobile/userOnlineHeart?${AppClient.signQueryBase(this.tokenQuery)}`,
-      body: `room_id=${tools.getLongRoomID(roomID)}&scale=xxhdpi`,
+      uri: `${apiLiveOrigin}/heartbeat/v1/OnLine/mobileOnline?${AppClient.signQueryBase(this.tokenQuery)}`,
+      body: `room_id=${Options.getLongRoomID(roomID)}&scale=xxhdpi`,
       json: true,
       headers: this.headers
     }, 'Android')
@@ -194,13 +194,6 @@ class Online extends AppClient {
         this.captchaJPEG = `data:image/jpeg;base64,${captcha.data.toString('base64')}`
       this._heartTimer = setTimeout(() => this.Stop(), 60 * 1000)
       tools.Log(this.nickname, '验证码错误')
-      request.post(`https://sc.ftqq.com/${Options._.config.adminServerChan}.send`, { //之所以单独弄出来，是因为tools的XHR方法容易出问题，导致base64链接破损，影响体验
-        form: {
-          text: `BiLive_Client ${this.nickname}验证码`,
-          desp: `![captcha](${this.captchaJPEG})`
-        }
-      })
-      return 'captcha'
     }
     else if (login.status === AppClient.status.error) {
       this.Stop()

@@ -86,8 +86,9 @@ class WebAPI extends EventEmitter {
         // 限制同时只能连接一个客户端
         if (this._wsClient !== undefined) this._wsClient.close(1001, JSON.stringify({ cmd: 'close', msg: 'too many connections' }))
         // 使用function可能出现一些问题, 此处无妨
+        const onLog = (data: string) => this._Send({ cmd: 'log', ts: 'log', msg: data })
         const destroy = () => {
-          delete tools.logs.onLog
+          tools.removeListener('log', onLog)
           client.close()
           client.terminate()
           client.removeAllListeners()
@@ -113,7 +114,7 @@ class WebAPI extends EventEmitter {
         }, 60 * 1000) // 60s为Nginx默认的超时时间
         this._wsClient = client
         // 日志
-        tools.logs.onLog = data => this._Send({ cmd: 'log', ts: 'log', msg: data })
+        tools.on('log', onLog)
       })
   }
   /**
@@ -129,7 +130,7 @@ class WebAPI extends EventEmitter {
     switch (cmd) {
       // 获取log
       case 'getLog': {
-        const data = tools.logs.data
+        const data = tools.logs
         this._Send({ cmd, ts, data })
       }
         break
@@ -292,11 +293,39 @@ class WebAPI extends EventEmitter {
         this._Send({ cmd, ts, uid, data })
       }
         break
+      // 获取util ID
+      case 'getAllUtilID': {
+        const data = Object.keys(Options._.util)
+        this._Send({ cmd, ts, data })
+      }
+        break
+      // 获取utilData
+      case 'getUtilData': {
+        const util = Options._.util
+        const getUtilID = message.utilID
+        if (typeof getUtilID === 'string' && util[getUtilID] !== undefined) this._Send({ cmd, ts, uid: getUtilID, data: util[getUtilID] })
+        else this._Send({ cmd, ts, msg: '错误：未知功能插件' })
+      }
+        break
+      // 接收util数据，触发对应util
+      case 'utilMSG': this.emit('utilMSG', message)
+        break
       // 未知命令
       default:
         this._Send({ cmd, ts, msg: '未知命令' })
         break
     }
+  }
+  /**
+   * 后端完成工作，向客户端发送回调信息
+   * 
+   * @param {message} message
+   */
+  public async callback(message: message) {
+    const cmd = message.cmd
+    const ts = message.ts
+    const msg = message.msg
+    this._Send({ cmd, ts, msg })
   }
   /**
    * 向客户端发送消息
@@ -315,7 +344,8 @@ interface message {
   ts: string
   msg?: string
   uid?: string
-  data?: config | advConfig | optionsInfo | string[] | userData
+  utilID?: string
+  data?: config | advConfig | optionsInfo | string[] | userData | utilData
   captcha?: string
 }
 export default WebAPI
