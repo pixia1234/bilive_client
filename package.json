@@ -32,13 +32,13 @@
     "@types/node": "^10.14.12",
     "@types/request": "^2.48.2",
     "@types/ws": "^6.0.1",
-    "buffer": "^5.2.1",
     "cz-conventional-changelog": "^2.1.0",
     "ts-loader": "^6.0.4",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.3.5"
   },
   "dependencies": {
+    "buffer": "^5.2.1",
     "npm-run-posix-or-windows": "^2.0.2",
     "request": "^2.88.0",
     "rimraf": "^2.6.3",

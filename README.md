@@ -12,26 +12,34 @@
 
 ## 使用方法
 
-1. 安装[Node.js](https://nodejs.org/)
+1. 安装[Node.js](https://nodejs.org/)，建议使用LTS版本
 2. 安装[Git](https://git-scm.com/downloads)
-3. 选择并定位到想要安装的目录
+3. 在命令行中定位到想要安装的目录
 4. `git clone https://github.com/Vector000/bilive_client.git`
-5. `cd bilive_client`
-6. `npm i` 或 `npm install`
-7. `npm i -g pm2`(自动更新所需)
-8. `npm start`
+5. `cd bilive_client` 进入程序主目录
+6. `npm i` 或 `npm install` 安装依赖包
+7. `npm i -g pm2`(自动更新所需，可忽略)
+8. `npm run build` 第一次启动需进行手动编译
+9. `npm start`(直接启动) 或 `pm2 start`(通过PM2后台启动)
 
-### 手动更新
+## 手动更新(从旧版本更新)
 
-1. 定位到目录
-2. `git pull`
-3. `npm i` 或 `npm install`
-4. `npm start`
+1. 定位到`bilive_client`目录下
+2. `git pull` 拉取更新
+3. `npm i` 或 `npm install` 检查更新依赖包
+4. `npm run build` 手动进行编译
+5. `npm start` 或 `pm2 start`
 
-更新之后可能会出现不兼容的情况，可删去`options/options.json`后重新进行设置
+更新之后可能会出现不兼容的情况(或者bug)，可删去`options/options.json`后重新进行账号设置
 
-可使用网页设置：[点此进行设置](http://vector000.coding.me/bilive_setting/)(~~tx云国内的解析好像有点问题，可能需要改host~~好像tx云的解析修好了)\
-推荐使用`doc/index.html`进行本地设置
+可使用网页设置：[点此进行设置](http://vector000.coding.me/bilive_setting/)(因为GitHub Page强行开启HTTPS，故使用tx的服务)\
+推荐使用`docs/index.html`进行本地设置
+
+## PM2
+
+可使用PM2在后台启动挂机进程，无需终端常驻，并可通过`pm2 restart bilive_client`来进行重启
+之所以用PM2做更新，是觉得PM2比较好用，而且重启方便，还能导出日志
+后面可能会引入一个类似于子进程触发更新的机制，顺便看看做release的话有没有什么好的更新方法
 
 ## 设置相关
 
@@ -56,7 +64,7 @@
 * 本地多分区监听(无ws服务端时可用，只支持广播类抽奖)
 * 用户被封禁后停抽并通知(每两小时检测)
 * 主站任务(登录/观看/投币)，支持指定投币对象
-* 云监听服务器，极大降低漏抽
+* 云监听服务器，大幅降低漏抽
 * 多次参与节奏风暴
 * 参与大乱斗抽奖功能
 * 自动更新
