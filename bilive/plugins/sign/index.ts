@@ -46,7 +46,7 @@ class Sign extends Plugin {
     users.forEach(async (user, uid) => {
       if (this._signList.get(uid) || !user.userData['doSign']) return
       const sign: requestOptions = {
-        uri: `https://api.live.bilibili.com/AppUser/getSignInfo?${AppClient.signQueryBase(user.tokenQuery)}`,
+        uri: `https://api.live.bilibili.com/rc/v1/Sign/doSign?${AppClient.signQueryBase(user.tokenQuery)}`,
         json: true,
         headers: user.headers
       }
