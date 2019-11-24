@@ -25,7 +25,7 @@ class Tools extends EventEmitter {
       case 'Android':
         return {
           'Connection': 'Keep-Alive',
-          'User-Agent': 'Mozilla/5.0 BiliDroid/5.43.1 (bbcallen@gmail.com)'
+          'User-Agent': 'Mozilla/5.0 BiliDroid/5.50.0 (bbcallen@gmail.com) os/android mobi_app/android build/5500300 innerVer/5500300'
         }
       case 'WebView':
         return {
@@ -34,7 +34,7 @@ class Tools extends EventEmitter {
           'Connection': 'keep-alive',
           'Cookie': 'l=v',
           'Origin': 'https://live.bilibili.com',
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; G8142 Build/47.1.A.12.270; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.91 Mobile Safari/537.36 BiliApp/5300000',
+          'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; G8142 Build/47.1.A.12.270; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.91 Mobile Safari/537.36 BiliApp/5500300',
           'X-Requested-With': 'tv.danmaku.bili'
         }
       default:

@@ -114,6 +114,7 @@ class Online extends AppClient {
    * @memberof Online
    */
   protected async _heartLoop() {
+    clearTimeout(this._heartTimer)
     const heartTest = await this._onlineHeart()
     if (heartTest !== undefined) {
       const test = await this._cookieError()
@@ -180,7 +181,6 @@ class Online extends AppClient {
     tools.Log(this.nickname, 'Token已失效')
     const login = await this.login()
     if (login.status === AppClient.status.success) {
-      clearTimeout(this._heartTimer)
       this.captchaJPEG = ''
       this.jar = tools.setCookie(this.cookieString)
       await this.getOnlineInfo()

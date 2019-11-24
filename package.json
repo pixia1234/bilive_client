@@ -1,17 +1,17 @@
 {
   "name": "bilive_client",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "基于Node.JS的bilibili直播挂机系统",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build:client && npm run build:view",
+    "build": "npm run clean && npm run build:client && npm run build:view",
     "build:client": "tsc -p tsconfig.json && npm-run-posix-or-windows copy:client",
     "build:view": "webpack --config docs/webpack.conf.js && npm-run-posix-or-windows copy:view",
     "copy:client": "cp bilive/options.default.json build/",
     "copy:client:windows": "xcopy bilive\\options.default.json build\\ /Y",
     "copy:view": "cp -r docs/view/ docs/index.html build/",
     "copy:view:windows": "xcopy docs\\view\\* build\\view\\ /Y && xcopy docs\\index.html build\\ /Y",
-    "clean": "rimraf build && mkdir build",
+    "clean": "rimraf build && mkdir build && rimraf logs && mkdir logs",
     "start": "node build/app.js"
   },
   "config": {
@@ -28,21 +28,21 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bootstrap": "^4.3.1",
-    "@types/jquery": "^3.3.30",
-    "@types/node": "^10.14.12",
-    "@types/request": "^2.48.2",
-    "@types/ws": "^6.0.1",
-    "cz-conventional-changelog": "^2.1.0",
-    "ts-loader": "^6.0.4",
-    "webpack": "^4.35.3",
-    "webpack-cli": "^3.3.5"
+    "@types/jquery": "^3.3.31",
+    "@types/node": "^12.12.12",
+    "@types/request": "^2.48.3",
+    "@types/ws": "^6.0.3",
+    "cz-conventional-changelog": "^3.0.2",
+    "ts-loader": "^6.2.1",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
   },
   "dependencies": {
-    "buffer": "^5.2.1",
+    "buffer": "^5.4.3",
     "npm-run-posix-or-windows": "^2.0.2",
     "request": "^2.88.0",
-    "rimraf": "^2.6.3",
-    "typescript": "^3.5.3",
-    "ws": "^7.1.0"
+    "rimraf": "^3.0.0",
+    "typescript": "^3.7.2",
+    "ws": "^7.2.0"
   }
 }
