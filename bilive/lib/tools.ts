@@ -204,10 +204,10 @@ class Tools extends EventEmitter {
   }
   public B64XorCipher = {
     encode(key: string, data: string): string {
-      return (data && data !== '' && key !== '') ? new Buffer(Tools.xorStrings(key, data), 'utf8').toString('base64') : data
+      return (data && data !== '' && key !== '') ? Buffer.from(Tools.xorStrings(key, data), 'utf8').toString('base64') : data
     },
     decode(key: string, data: string): string {
-      return (data && data !== '' && key !== '') ? Tools.xorStrings(key, new Buffer(data, 'base64').toString('utf8')) : data
+      return (data && data !== '' && key !== '') ? Tools.xorStrings(key, Buffer.from(data, 'base64').toString('utf8')) : data
     }
   }
 }
