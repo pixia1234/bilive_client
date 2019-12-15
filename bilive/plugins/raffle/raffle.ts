@@ -136,7 +136,7 @@ class Raffle extends EventEmitter {
         if (raffleAward.body.msg === '访问被拒绝') 
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
         else if (raffleAward.body.code === 500 && raffleAward.body.msg === '系统繁忙') {
-          await tools.Sleep(300)
+          await tools.Sleep(500)
           this._RaffleAward()
         }
       }
@@ -175,7 +175,7 @@ class Raffle extends EventEmitter {
           tools.Log(this._user.nickname, title, id, data.message)
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward.body)
-        if (lotteryReward.body.msg === '访问被拒绝') 
+        if (lotteryReward.body.msg === '访问被拒绝')
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
         else if (lotteryReward.body.code === 500 && lotteryReward.body.msg === '系统繁忙') {
           await tools.Sleep(500)
@@ -208,7 +208,7 @@ class Raffle extends EventEmitter {
           tools.Log(this._user.nickname, title, id, data.message)
         }
         else tools.Log(this._user.nickname, title, id, lotteryReward2.body)
-        if (lotteryReward2.body.msg === '访问被拒绝') 
+        if (lotteryReward2.body.msg === '访问被拒绝')
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
         else if (lotteryReward2.body.code === 500 && lotteryReward2.body.msg === '系统繁忙') {
           await tools.Sleep(500)

@@ -255,7 +255,7 @@ class Raffle extends Plugin {
           .Start()
         this.raffleSet.delete(message.id)
       }
-      await tools.Sleep(300)
+      await tools.Sleep(500)
     }
   }
   /**
