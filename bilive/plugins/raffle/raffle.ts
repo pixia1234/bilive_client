@@ -152,7 +152,7 @@ class Raffle extends EventEmitter {
     const { id, roomID, title, type } = <lotteryMessage>this._raffleMessage
     const reward: requestOptions = {
       method: 'POST',
-      uri: `${this._url}/join`,
+      uri: 'https://api.live.bilibili.com/xlive/lottery-interface/v2/Lottery/join',
       body: AppClient.signQueryBase(`${this._user.tokenQuery}&id=${id}&roomid=${roomID}&type=${type}`),
       json: true,
       headers: this._user.headers
@@ -178,39 +178,6 @@ class Raffle extends EventEmitter {
         if (lotteryReward.body.msg === '访问被拒绝')
           this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
         else if (lotteryReward.body.code === 500 && lotteryReward.body.msg === '系统繁忙') {
-          await tools.Sleep(500)
-          this._Lottery()
-        }
-      }
-    })
-    const reward2: requestOptions = {
-      method: 'POST',
-      uri: 'https://api.live.bilibili.com/xlive/lottery-interface/v2/Lottery/join',
-      body: AppClient.signQueryBase(`${this._user.tokenQuery}&id=${id}&roomid=${roomID}&type=${type}`),
-      json: true,
-      headers: this._user.headers
-    }
-    tools.XHR<lotteryReward>(reward2, 'Android').then(async lotteryReward2 => {
-      if (lotteryReward2 !== undefined && lotteryReward2.response.statusCode === 200) {
-        if (lotteryReward2.body.code === 0) {
-          let data = lotteryReward2.body.data
-          let type = data.privilege_type
-          this.emit('msg', {
-            cmd: 'earn',
-            data: {
-              uid: this._user.uid,
-              nickname: this._user.nickname,
-              type: 'lottery',
-              name: data.message.includes('辣条X') ? '辣条' : '亲密度',
-              num: (type === 1 ? 20 : (type === 2 ? 5 : 1))
-            }
-          })
-          tools.Log(this._user.nickname, title, id, data.message)
-        }
-        else tools.Log(this._user.nickname, title, id, lotteryReward2.body)
-        if (lotteryReward2.body.msg === '访问被拒绝')
-          this.emit('msg', { cmd: 'ban', data: { uid: this._user.uid, type: 'raffle', nickname: this._user.nickname } })
-        else if (lotteryReward2.body.code === 500 && lotteryReward2.body.msg === '系统繁忙') {
           await tools.Sleep(500)
           this._Lottery()
         }
