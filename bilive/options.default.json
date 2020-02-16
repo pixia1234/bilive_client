@@ -11,7 +11,7 @@
   },
   "advConfig": {
     "defaultUserID": 0,
-    "serverURL": "wss://bilive.halaal.win/server/#164c48292a6c773c85716093589cd60e",
+    "serverURL": "ws://47.101.153.223:20080/#ff5f0db2548baecbcd21c7a50ece57a3",
     "bakServerURL": "",
     "eventRooms": [
       3

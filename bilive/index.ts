@@ -52,6 +52,7 @@ class BiLive {
       if (typeof plugin.start === 'function')
         await plugin.start({ options: Options._, users: Options.user }, false)
     })
+    Options.backup()
     this.loop = setInterval(() => this._loop(), 55 * 1000)
     this._WebAPI = new WebAPI()
     this._WebAPI
@@ -74,6 +75,7 @@ class BiLive {
     const cstHour = cst.getUTCHours()
     const cstMin = cst.getUTCMinutes()
     if (Options._.config.localListener) this._Listener.updateAreaRoom() // 更新监听房间
+    if (cstMin === 0 && cstHour % 12 === 0) Options.backup() // 每天备份两次
     this._Listener.clearAllID() // 清空ID缓存
     this._pluginList.forEach(plugin => { // 插件运行
       if (typeof plugin.loop === 'function') plugin.loop({ cst, cstMin, cstHour, cstString, options: Options._, users: Options.user })

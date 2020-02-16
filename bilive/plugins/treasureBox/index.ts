@@ -7,16 +7,8 @@ class TreasureBox extends Plugin {
   }
   public name = '宝箱道具'
   public description = '领取宝箱道具'
-  public version = '0.0.1'
+  public version = '0.0.2'
   public author = 'lzghzr'
-  /**
-   * 任务表
-   *
-   * @private
-   * @type {Map<string, boolean>}
-   * @memberof TreasureBox
-   */
-  private _treasureBoxList: Map<string, boolean> = new Map()
   public async load({ defaultOptions, whiteList }: { defaultOptions: options, whiteList: Set<string> }) {
     // 宝箱道具
     defaultOptions.newUserData['treasureBox'] = false
@@ -31,9 +23,7 @@ class TreasureBox extends Plugin {
   public async start({ users }: { users: Map<string, User> }) {
     this._treasureBox(users)
   }
-  public async loop({ cstMin, cstHour, cstString, users }: { cstMin: number, cstHour: number, cstString: string, users: Map<string, User> }) {
-    // 每天00:10刷新任务
-    if (cstString === '00:10') this._treasureBoxList.clear()
+  public async loop({ cstMin, cstHour, users }: { cstMin: number, cstHour: number, users: Map<string, User> }) {
     // 每天04:30, 12:30, 20:30做任务
     if (cstMin === 30 && cstHour % 8 === 4) this._treasureBox(users)
   }
@@ -57,7 +47,7 @@ class TreasureBox extends Plugin {
    * @memberof TreasureBox
    */
   private async _treasureBoxUser(uid: string, user: User) {
-    if (this._treasureBoxList.get(uid) || !user.userData['treasureBox']) return
+    if (!user.userData['treasureBox']) return
     // 获取宝箱状态,换房间会重新冷却
     const current: requestOptions = {
       uri: `https://api.live.bilibili.com/mobile/freeSilverCurrentTask?${AppClient.signQueryBase(user.tokenQuery)}`,
@@ -76,10 +66,7 @@ class TreasureBox extends Plugin {
         await tools.XHR<award>(award, 'Android')
         this._treasureBoxUser(uid, user)
       }
-      else if (currentTask.body.code === -10017) {
-        this._treasureBoxList.set(uid, true)
-        tools.Log(user.nickname, '宝箱道具', '已领取所有宝箱')
-      }
+      else if (currentTask.body.code === -10017) tools.Log(user.nickname, '宝箱道具', '已领取所有宝箱')
       else tools.Log(user.nickname, '宝箱道具', currentTask.body)
     }
     else tools.Log(user.nickname, '宝箱道具', '网络错误')

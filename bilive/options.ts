@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import fs from 'fs'
 import util from 'util'
+import tools from './lib/tools'
 const FSwriteFile = util.promisify(fs.writeFile)
 /**
 * 统一设置
@@ -24,7 +25,11 @@ class Options extends EventEmitter {
     if (!hasFile) fs.copyFileSync(this._dirname + 'build/options.default.json', this._dirname + 'options/options.json')
     // 读取用户设置文件
     const userOptionBuffer = fs.readFileSync(this._dirname + 'options/options.json')
-    this._userOption = <options>JSON.parse(userOptionBuffer.toString())
+    this._userOption = this._
+    if (this.isValidJSON(userOptionBuffer.toString())) {
+      this._userOption = <options>JSON.parse(userOptionBuffer.toString())
+    }
+    else this.restore()
     if (this._ === undefined || this._userOption === undefined) throw new TypeError('文件格式化失败')
   }
   /**
@@ -128,6 +133,21 @@ class Options extends EventEmitter {
     return this.longRoomID.get(roomID) || roomID
   }
   /**
+   * 验证JSON可读性
+   * 
+   * @returns
+   * @memberof Options
+   */
+  private isValidJSON(string: string) {
+    try {
+      <options>JSON.parse(string)
+      return true
+    } catch (error) {
+      console.log(error)
+      return false
+    }
+  }
+  /**
    * 保存设置
    *
    * @returns
@@ -139,6 +159,39 @@ class Options extends EventEmitter {
       , JSON.stringify(this._, (key, value) => (key.match(/^\d*$/) !== null || this.whiteList.has(key)) ? value : undefined, 2))
     if (error !== undefined) console.error(`${new Date().toString().slice(4, 24)} :`, error)
     return this._
+  }
+  /**
+   * 备份设置文件
+   * 
+   * @memberof Options
+   */
+  public async backup() {
+    const optionString = fs.readFileSync(this._dirname + 'options/options.json').toString()
+    if (this.isValidJSON(optionString)) {
+      // options.json为可parse的JSON文件，视为正常文件
+      fs.copyFileSync(this._dirname + 'options/options.json', this._dirname + 'options/options.bak')
+      tools.Log('成功备份options.json')
+    }
+  }
+  /**
+   * 还原设置文件
+   * 
+   * @memberof Options
+   */
+  public async restore() {
+    tools.Log('options.json似乎已损坏，将尝试进行还原...')
+    if (fs.existsSync(this._dirname + 'options/options.bak')) {
+      const backupString = fs.readFileSync(this._dirname + 'options/options.bak').toString()
+      if (this.isValidJSON(backupString)) {
+        // options.bak为可parse的JSON文件，视为正常文件
+        fs.copyFileSync(this._dirname + 'options/options.bak', this._dirname + 'options/options.json')
+        this._userOption = <options>JSON.parse(backupString)
+        this.init()
+       tools.Log('已成功恢复options.json')
+      }
+      else return tools.ErrorLog('备份文件似乎已损坏，请重新进行设置!')
+    }
+    else return tools.ErrorLog('未找到备份文件，请重新进行设置!')
   }
 }
 // 自定义一些常量
