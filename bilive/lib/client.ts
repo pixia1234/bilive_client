@@ -76,7 +76,7 @@ class Client extends EventEmitter {
     if (this._connected) return
     this._connected = true
     this._wsClient = new ws(this._server, [this._protocol], { rejectUnauthorized: false, headers: {
-      'User-Agent': 'Bilive_Client 2.2.5.2251V'
+      'User-Agent': 'Bilive_Client 2.2.6.2260V'
     }})
     this._wsClient
       .on('error', error => this._ClientErrorHandler(error))
